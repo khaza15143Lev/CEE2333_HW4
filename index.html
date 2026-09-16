@@ -1,0 +1,3337 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Homework 4</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f0f8ff;
+      }
+      h1, h2, h3 { color: #2c3e50; }
+      p.subtitle { color: #555; }
+      .interactive-demo {
+        background-color: #e0f7fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-top: 30px;
+      }
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 16px;
+        border-radius: 5px;
+        margin: 5px 5px 5px 0;
+      }
+      button:hover { background-color: #2980b9; }
+      button:disabled { background-color: #95a5a6; cursor: default; }
+      button:disabled:hover { background-color: #95a5a6; }
+      .hidden { display: none; }
+      .math-formula {
+        font-family: "Times New Roman", Times, serif;
+        font-style: italic;
+        background-color: #f9f9f9;
+        padding: 8px 10px;
+        border-radius: 5px;
+        display: inline-block;
+      }
+      .question-section { margin-top: 15px; font-size: 18px; }
+      .feedback { margin-top: 10px; font-size: 17px; font-weight: bold; }
+      .feedback.correct { color: #1e8449; }
+      .feedback.incorrect { color: #c0392b; }
+      .calculation-steps {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 5px;
+      }
+      .step { margin-bottom: 10px; font-family: "Times New Roman", Times, serif; font-size: 17px; }
+      .result-display { font-size: 19px; font-weight: bold; margin-top: 15px; color: #1565c0; }
+      .quiz-section { margin-top: 15px; }
+      .quiz-section p.quiz-label { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+      .quiz-input-row { margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+      .quiz-input-row input[type="text"] {
+        width: 80px; padding: 4px 6px; font-size: 16px;
+        font-family: "Times New Roman", Times, serif;
+        border: 2px solid #ccc; border-radius: 4px; text-align: center;
+      }
+      .quiz-input-row input.correct { border-color: #1e8449; background-color: #e8f5e9; }
+      .quiz-input-row input.incorrect { border-color: #c0392b; background-color: #ffebee; }
+      .quiz-feedback { margin-top: 10px; font-size: 17px; font-weight: bold; }
+      .quiz-feedback.correct { color: #1e8449; }
+      .quiz-feedback.incorrect { color: #c0392b; }
+      .quiz-hint { margin-top: 8px; font-size: 15px; color: #555; background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 5px; }
+      .score-display { margin-top: 10px; font-size: 16px; color: #555; }
+
+      /* Matrices */
+      .matrix-container { display: inline-block; vertical-align: middle; margin: 10px 20px 10px 0; }
+      .matrix-label { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+      table.matrix-table { border-collapse: collapse; margin: 5px 0; }
+      table.matrix-table td {
+        border: 1px solid #ddd; padding: 8px 12px; text-align: center;
+        background-color: #fff; font-family: "Times New Roman", Times, serif;
+        font-size: 17px; min-width: 20px;
+      }
+      .quiz-matrix-input { border-collapse: collapse; margin: 5px 0; }
+      .quiz-matrix-input td { padding: 3px; }
+      .quiz-matrix-input input[type="text"] {
+        width: 60px; padding: 4px 6px; font-size: 16px;
+        font-family: "Times New Roman", Times, serif;
+        border: 2px solid #ccc; border-radius: 4px; text-align: center;
+      }
+      .quiz-matrix-input input.correct { border-color: #1e8449; background-color: #e8f5e9; }
+      .quiz-matrix-input input.incorrect { border-color: #c0392b; background-color: #ffebee; }
+
+      table.points-table { border-collapse: collapse; margin: 10px 0; background-color: #fff; }
+      table.points-table th, table.points-table td {
+        border: 1px solid #ddd; padding: 8px 14px; text-align: center;
+        font-family: "Times New Roman", Times, serif; font-size: 17px;
+      }
+      table.points-table th { background-color: #f0f0f0; }
+
+      /* Sub-tabs (Problem 1 / 2 / 3 internal tabs) */
+      .p1-tab-bar, .p2-tab-bar, .p3-tab-bar { display: flex; gap: 0; margin-top: 20px; flex-wrap: wrap; }
+      .p1-tab-bar button, .p2-tab-bar button, .p3-tab-bar button {
+        border-radius: 5px 5px 0 0; background-color: #bdc3c7;
+        font-size: 14px; padding: 10px 14px; margin: 0;
+      }
+      .p1-tab-bar button.active, .p2-tab-bar button.active, .p3-tab-bar button.active {
+        background-color: #3498db; font-weight: bold;
+      }
+      .p1-tab-content, .p2-tab-content, .p3-tab-content { display: none; }
+      .p1-tab-content.active, .p2-tab-content.active, .p3-tab-content.active { display: block; }
+
+      /* Main (homework-level) tabs */
+      .main-tab-bar { display: flex; gap: 0; margin-top: 10px; flex-wrap: wrap; }
+      .main-tab-bar button {
+        border-radius: 5px 5px 0 0; background-color: #7f8c8d; color: #fff;
+        font-size: 15px; padding: 12px 20px; margin: 0;
+      }
+      .main-tab-bar button.active { background-color: #2c3e50; font-weight: bold; }
+      .main-tab-content { display: none; }
+      .main-tab-content.active { display: block; }
+      .summary-box { background-color: #e0f7fa; padding: 25px; border-radius: 10px; margin-top: 0; }
+      .summary-grand-total { font-size: 28px; font-weight: bold; color: #1565c0; margin-bottom: 20px; }
+      .summary-row {
+        display: flex; justify-content: space-between; align-items: center;
+        background-color: #fff; border: 1px solid #ddd; border-radius: 6px;
+        padding: 12px 18px; margin-bottom: 10px; font-size: 17px;
+      }
+      .summary-row .score { font-weight: bold; color: #1e8449; }
+
+      /* Submission code generator */
+      .code-box { background-color: #fff; border: 2px dashed #1565c0; border-radius: 8px; padding: 18px; margin-top: 25px; }
+      .code-box h3 { margin-top: 0; color: #1565c0; }
+      .code-form-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+      .code-form-row input[type="text"] {
+        flex: 1; min-width: 180px; padding: 8px 10px; font-size: 15px;
+        border: 2px solid #ccc; border-radius: 5px;
+      }
+      .code-output-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+      #submission-code-output {
+        flex: 1; min-width: 240px; padding: 10px; font-size: 15px;
+        font-family: "Courier New", monospace; font-weight: bold;
+        border: 2px solid #1e8449; border-radius: 5px; background-color: #e8f5e9;
+        color: #1b5e20; letter-spacing: 0.5px;
+      }
+      .copy-btn { background-color: #1e8449; }
+      .copy-btn:hover { background-color: #17663a; }
+      .code-note { font-size: 14px; color: #555; margin-top: 10px; }
+      .code-warning { font-size: 14px; color: #c0392b; margin-top: 8px; font-weight: bold; }
+      .resume-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+      .resume-row input[type="text"] {
+        flex: 1; min-width: 220px; padding: 8px 10px; font-size: 15px;
+        border: 2px solid #ccc; border-radius: 5px; font-family: "Courier New", monospace;
+      }
+      .code-form-row input[readonly].locked {
+        background-color: #eceff1; color: #555; cursor: not-allowed; border-color: #b0bec5;
+      }
+      .identity-locked-note { font-size: 13px; color: #1565c0; margin-top: 6px; font-weight: bold; }
+      .unlock-btn { background-color: #b71c1c; margin-top: 10px; }
+      .unlock-btn:hover { background-color: #8e1616; }
+      .integrity-notice {
+        background-color: #eceff1; border: 1px solid #90a4ae; border-radius: 6px;
+        padding: 12px 16px; margin: 15px 0; font-size: 14px; color: #37474f;
+      }
+      .integrity-notice strong { color: #263238; }
+      .code-confirmation {
+        background-color: #e8f5e9; border: 2px solid #1e8449; border-radius: 8px;
+        padding: 14px 18px; margin-top: 12px;
+      }
+      .code-confirmation h4 { margin: 0 0 8px; color: #1b5e20; }
+      .code-confirmation table { border-collapse: collapse; width: 100%; }
+      .code-confirmation table td { padding: 3px 8px 3px 0; font-size: 14px; vertical-align: top; }
+      .code-confirmation table td.label { font-weight: bold; color: #1b5e20; white-space: nowrap; }
+      .code-confirmation .copy-status { margin-top: 8px; font-weight: bold; }
+      .code-confirmation .copy-status.copied { color: #1e8449; }
+      .code-confirmation .copy-status.manual { color: #b7950b; }
+      .code-confirmation .reminder { margin-top: 8px; font-style: italic; color: #37474f; }
+      .print-btn { background-color: #455a64; margin: 10px 0 20px; }
+      .print-btn:hover { background-color: #34495e; }
+      .print-header { display: none; }
+      .print-header h2 { margin: 0 0 8px; }
+      .csv-mode-row { margin: 10px 0; font-size: 14px; }
+      .csv-mode-row label { margin-right: 20px; cursor: pointer; }
+      .csv-summary-list { font-size: 14px; margin: 4px 0; }
+      @media print {
+        .no-print, .main-tab-bar, .code-box, .instructor-toggle, .instructor-panel,
+        #main-tab-p1, #main-tab-p2, #main-tab-p3,
+        p.subtitle, h1 { display: none !important; }
+        .print-header { display: block !important; }
+        .summary-box { border: none; box-shadow: none; padding: 0; }
+      }
+
+      /* Instructor decode panel */
+      .instructor-toggle {
+        margin-top: 25px; font-size: 14px; color: #777; cursor: pointer;
+        text-decoration: underline; display: inline-block;
+      }
+      .instructor-panel {
+        display: none; margin-top: 12px; background-color: #fdf6e3;
+        border: 2px dashed #b7950b; border-radius: 8px; padding: 18px;
+      }
+      .instructor-panel.open { display: block; }
+      .instructor-panel h3 { margin-top: 0; color: #7d6608; }
+      .instructor-panel textarea {
+        width: 100%; min-height: 100px; font-family: "Courier New", monospace;
+        font-size: 14px; padding: 8px; border: 2px solid #ccc; border-radius: 5px;
+        box-sizing: border-box;
+      }
+      table.decode-table { border-collapse: collapse; width: 100%; margin-top: 12px; background: #fff; }
+      table.decode-table th, table.decode-table td {
+        border: 1px solid #ddd; padding: 6px 10px; font-size: 14px; text-align: left;
+      }
+      table.decode-table th { background-color: #f2e6b8; }
+      table.decode-table tr.tampered { background-color: #ffebee; }
+      table.decode-table tr.tampered td.validity { color: #c0392b; font-weight: bold; }
+      table.decode-table td.validity { color: #1e8449; font-weight: bold; }
+
+      .decode-card { background: #fff; border: 2px solid #ccc; border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+      .decode-card.valid { border-color: #1e8449; }
+      .decode-card.expired { border-color: #b7950b; background-color: #fdf6e3; }
+      .decode-card.invalid { border-color: #c0392b; background-color: #ffebee; }
+      .decode-card-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
+      .decode-name { font-size: 17px; font-weight: bold; color: #263238; }
+      .decode-status-badge { font-size: 13px; font-weight: bold; padding: 2px 10px; border-radius: 12px; color: #fff; }
+      .decode-status-badge.valid { background-color: #1e8449; }
+      .decode-status-badge.expired { background-color: #b7950b; }
+      .decode-status-badge.invalid { background-color: #c0392b; }
+      table.decode-info-table { border-collapse: collapse; margin-bottom: 8px; }
+      table.decode-info-table td { padding: 2px 8px 2px 0; font-size: 14px; vertical-align: top; }
+      table.decode-info-table td.label { font-weight: bold; color: #455a64; white-space: nowrap; }
+      .decode-breakdown { font-size: 13px; color: #37474f; border-top: 1px dashed #ccc; padding-top: 6px; }
+      .decode-breakdown .breakdown-row { margin: 2px 0; }
+
+      /* Shared "input panel + diagram/output sheet" styling, used by
+         Problem 2 (matrix inverse) and Problem 3 (2D frame FEM). */
+      .fem-sheet {
+        background:
+          linear-gradient(#dce6f0 1px, transparent 1px) 0 0/28px 28px,
+          linear-gradient(90deg, #dce6f0 1px, transparent 1px) 0 0/28px 28px,
+          #fbfdff;
+        border: 1px solid #cfd8dc;
+        padding: 10px;
+        margin: 10px 0;
+      }
+      .fem-sheet svg { display: block; width: 100%; height: auto; }
+      .fem-step-block {
+        background-color: #fff; border: 1px solid #ddd; border-radius: 6px;
+        padding: 14px 16px; margin-top: 16px;
+      }
+      .fem-step-block h3 { margin: 0 0 8px; font-size: 17px; color: #2c3e50; }
+      .fem-step-block .fem-step-intro { font-size: 15px; margin-bottom: 10px; }
+      .fem-input-panel {
+        background-color: #fff; border: 1px solid #ddd; border-radius: 6px;
+        padding: 16px 18px; margin: 10px 0; max-width: 620px;
+      }
+      .fem-field { margin-bottom: 14px; }
+      .fem-field label { display: block; font-weight: bold; font-size: 13px; color: #455a64; margin-bottom: 4px; }
+      .fem-field input, .fem-field select {
+        width: 100%; padding: 6px 8px; font-size: 14px; border: 1px solid #ccc;
+        border-radius: 4px; font-family: "Times New Roman", Times, serif; box-sizing: border-box;
+      }
+      .fem-hint { font-size: 12px; color: #777; margin-top: 3px; }
+      .fem-row2 { display: flex; gap: 16px; flex-wrap: wrap; }
+      .fem-row2 .fem-field { flex: 1; min-width: 160px; }
+      .fem-error {
+        margin-top: 10px; padding: 9px 10px; background-color: #FBE9E4; border: 1px solid #B5451B;
+        color: #B5451B; font-size: 13px; border-radius: 4px; display: none;
+      }
+      .fem-edit-bar { display: flex; justify-content: flex-start; gap: 8px; margin: 10px 0; }
+      .matinv-grid { max-height: 340px; overflow: auto; }
+      .matinv-upload-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Homework 4</h1>
+    <p class="subtitle">Complete the problems below. Your combined score is tracked on the Summary tab.</p>
+
+    <div class="main-tab-bar" id="main-tab-bar">
+      <button class="active" onclick="switchMainTab('summary')">Summary</button>
+      <button onclick="switchMainTab('p1')">Problem 1: Interpolation &amp; Quadrature</button>
+      <button onclick="switchMainTab('p2')">Problem 2: Matrix Inverse</button>
+      <button onclick="switchMainTab('p3')">Problem 3: 2D Frame FEM</button>
+    </div>
+
+    <div class="main-tab-content active" id="main-tab-summary">
+      <div class="summary-box">
+        <div class="print-header hidden" id="print-header">
+          <h2>Homework 4 — Score Summary</h2>
+          <p><strong>Name:</strong> <span id="print-header-name"></span> &nbsp;&nbsp; <strong>ID:</strong> <span id="print-header-id"></span></p>
+          <p><strong>Printed:</strong> <span id="print-header-date"></span></p>
+        </div>
+        <div class="summary-grand-total">Total Score: <span id="grand-total">0.0</span> / 30</div>
+        <button class="print-btn no-print" onclick="printSummary()">&#128424; Print / Save as PDF</button>
+        <div class="summary-row hidden" id="summary-baseline-row">
+          <span>Carried over from a resumed session</span>
+          <span class="score"><span id="summary-baseline-score">0.0</span></span>
+        </div>
+        <div class="summary-row">
+          <span>Problem 1: Interpolation &amp; Quadrature (max 16)</span>
+          <span class="score"><span id="summary-p1-score">0.0</span> / 16</span>
+        </div>
+        <div class="summary-row">
+          <span>Problem 2: Matrix Inverse (max 4)</span>
+          <span class="score"><span id="summary-p2-score">0.0</span> / 4</span>
+        </div>
+        <div class="summary-row">
+          <span>Problem 3: 2D Frame FEM (max 25)</span>
+          <span class="score"><span id="summary-p3-score">0.0</span> / 10</span>
+        </div>
+        <p class="subtitle" style="margin-top: 20px;">Switch to the Problem 1, Problem 2, or Problem 3 tab above to work through the questions.</p>
+
+        <div class="integrity-notice">
+          <strong>Academic integrity notice:</strong> Submit only a code generated from your own completed assignment. Submission codes are checked for validity and may be reviewed against Canvas submission records. Altered, expired, or invalid codes may receive no credit pending instructor review.
+        </div>
+
+        <div class="code-box">
+          <h3>Get Your Submission Code</h3>
+          <p>If you're continuing a previous session, paste your earlier code below and click "Resume" first — it will restore your name, ID, and prior score as your starting point.</p>
+          <div class="resume-row">
+            <input type="text" id="resume-code-input" placeholder="Paste a previous code to resume...">
+            <button onclick="resumeFromCode()">Resume</button>
+          </div>
+          <p class="code-warning hidden" id="resume-warning-msg"></p>
+
+          <p>When you are finished, enter your info below (if not already filled in by resuming) and click "Generate Code." Copy the resulting code and paste it into the Canvas assignment for Homework 4 as your submission.</p>
+          <div class="code-form-row">
+            <input type="text" id="student-name-input" placeholder="Full name (as on Canvas)">
+            <input type="text" id="student-id-input" placeholder="Canvas login / email / student ID">
+          </div>
+          <button onclick="generateSubmissionCode()">Generate Code</button>
+          <div class="code-output-row hidden" id="code-output-row">
+            <input type="text" id="submission-code-output" readonly>
+            <button class="copy-btn" onclick="copySubmissionCode()">Copy</button>
+          </div>
+
+          <div class="code-confirmation hidden" id="code-confirmation">
+            <h4>&#10003; Code Generated</h4>
+            <table>
+              <tr><td class="label">Name:</td><td id="confirm-name"></td></tr>
+              <tr><td class="label">ID:</td><td id="confirm-id"></td></tr>
+              <tr><td class="label">Score:</td><td id="confirm-score"></td></tr>
+              <tr><td class="label">Generated:</td><td id="confirm-datetime"></td></tr>
+            </table>
+            <p class="copy-status" id="confirm-copy-status"></p>
+            <p class="reminder">Paste the entire code into the Canvas Homework 4 text-entry submission.</p>
+          </div>
+
+          <p class="code-note">The code encodes your name, ID, and the full score breakdown for every sub-tab (<span id="code-score-snapshot">0.0</span> / 42) with a tamper-check built in. Your submission code records the date and time it was generated. Generate a new code after making changes and immediately before submitting in Canvas. Submit the code before the Canvas due date. Keep a copy of your code until your grade is posted.</p>
+          <p class="identity-locked-note hidden" id="identity-locked-note">Name and ID are now locked for this session.</p>
+          <p class="code-warning hidden" id="code-warning-msg"></p>
+          <button class="unlock-btn" onclick="unlockIdentityAndReset()">Unlock Identity / Start Over</button>
+        </div>
+
+        <span class="instructor-toggle" id="instructor-toggle-link" onclick="toggleInstructorPanel()">Instructor tools (decode submission codes) &#9662;</span>
+        <div class="instructor-panel" id="instructor-panel">
+          <h3>Step 1: Decode Submission Codes</h3>
+          <p>Paste one or more student codes below (one per line — extra text on the line is ignored) and click "Decode" to recover name, ID, and score.</p>
+          <textarea id="decode-input" placeholder="Paste codes here, one per line..."></textarea>
+          <div style="margin-top: 10px;">
+            <button onclick="decodeSubmissionCodes()">Decode</button>
+          </div>
+          <div id="decode-results"></div>
+
+          <div id="csv-step" class="hidden" style="margin-top: 25px; border-top: 2px dashed #b7950b; padding-top: 15px;">
+            <h3>Step 2: Auto-fill Your Canvas Gradebook (optional)</h3>
+            <p>In Canvas, go to <strong>Grades → Export</strong> to download the current gradebook CSV. Upload it here — this tool will match each decoded student to a row by email / login ID (falling back to name) and fill in the score for the column you pick. Nothing is uploaded anywhere; the file is processed entirely in your browser.</p>
+            <input type="file" id="gradebook-csv-input" accept=".csv" onchange="handleGradebookCsvUpload(event)">
+            <div id="csv-column-picker" class="hidden" style="margin-top: 10px;">
+              <label for="csv-assignment-column">Assignment column to fill: </label>
+              <select id="csv-assignment-column"></select>
+              <div class="csv-mode-row">
+                <label><input type="radio" name="csv-fill-mode" value="overwrite" checked> Overwrite existing scores</label>
+                <label><input type="radio" name="csv-fill-mode" value="blank"> Only fill blank cells</label>
+              </div>
+              <button onclick="fillGradebookCsv()">Fill Scores &amp; Download</button>
+            </div>
+            <div id="csv-match-summary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-tab-content" id="main-tab-p1">
+
+    <h1 id="p1-problem-title">Problem 1. Maximum score = 16 | Total score = <span id="p1-total-score">0.0</span></h1>
+
+    <div class="p1-tab-bar" id="p1-tab-bar">
+      <button class="active" onclick="p1SwitchTab('quad')">a. Quadratic Interp.</button>
+      <button onclick="p1SwitchTab('bilin')">b. Bilinear Interp.</button>
+      <button onclick="p1SwitchTab('gauss1d')">c. 1D Gauss Integration</button>
+      <button onclick="p1SwitchTab('gauss2d')">d. 2D Gauss Integration</button>
+    </div>
+
+    <!-- (a) Quadratic (Lagrange) Interpolation -->
+    <div class="p1-tab-content active" id="p1-tab-quad">
+      <p class="subtitle">(a) Use Lagrange quadratic interpolation through three given points to evaluate the interpolating polynomial elsewhere.</p>
+      <div class="interactive-demo">
+        <button id="p1-quad-generateBtn" disabled onclick="p1QuadGenerate()">Generate New Problem</button>
+        <div id="p1-quad-display"></div>
+        <div class="quiz-section" id="p1-quad-quiz-section">
+          <div id="p1-quad-quiz-inputs"></div>
+          <button id="p1-quad-quizCheckBtn" onclick="p1QuadCheckQuiz()">Check Answer</button>
+        </div>
+        <div id="p1-quad-quiz-feedback" class="quiz-feedback"></div>
+        <div id="p1-quad-quiz-hint" class="quiz-hint hidden"></div>
+        <div id="p1-quad-score-display" class="score-display"></div>
+      </div>
+    </div>
+
+    <!-- (b) 2D Bilinear Interpolation -->
+    <div class="p1-tab-content" id="p1-tab-bilin">
+      <p class="subtitle">(b) The field value f(x,y) is known at the four corners of a rectangle. Use 2D bilinear interpolation to find its value at the given interior point.</p>
+      <div class="interactive-demo">
+        <button id="p1-bilin-generateBtn" disabled onclick="p1BilinGenerate()">Generate New Problem</button>
+        <div id="p1-bilin-display"></div>
+        <div class="quiz-section" id="p1-bilin-quiz-section">
+          <div id="p1-bilin-quiz-inputs"></div>
+          <button id="p1-bilin-quizCheckBtn" onclick="p1BilinCheckQuiz()">Check Answer</button>
+        </div>
+        <div id="p1-bilin-quiz-feedback" class="quiz-feedback"></div>
+        <div id="p1-bilin-quiz-hint" class="quiz-hint hidden"></div>
+        <div id="p1-bilin-score-display" class="score-display"></div>
+      </div>
+    </div>
+
+    <!-- (c) 1D Gauss Integration (1, 2, or 3 point, assigned randomly) -->
+    <div class="p1-tab-content" id="p1-tab-gauss1d">
+      <p class="subtitle">(c) A random number of Gauss points (1, 2, or 3) is assigned each time. Map the Gauss points/weights to the physical interval and approximate the integral. Enter decimals accurate to <strong>at least 4 significant figures</strong>.</p>
+      <div class="interactive-demo">
+        <button id="p1-gauss1d-generateBtn" disabled onclick="p1Gauss1dGenerate()">Generate New Problem</button>
+        <div id="p1-gauss1d-display"></div>
+        <div class="quiz-section" id="p1-gauss1d-quiz-section">
+          <div id="p1-gauss1d-quiz-inputs"></div>
+          <button id="p1-gauss1d-quizCheckBtn" onclick="p1Gauss1dCheckQuiz()">Check Answer</button>
+        </div>
+        <div id="p1-gauss1d-quiz-feedback" class="quiz-feedback"></div>
+        <div id="p1-gauss1d-quiz-hint" class="quiz-hint hidden"></div>
+        <div id="p1-gauss1d-score-display" class="score-display"></div>
+      </div>
+    </div>
+
+    <!-- (d) 2D Gauss Integration: (nx=1,ny=2), (nx=2,ny=1), or (nx=2,ny=2), assigned randomly -->
+    <div class="p1-tab-content" id="p1-tab-gauss2d">
+      <p class="subtitle">(d) A random point-count combination — (n<sub>x</sub>=1, n<sub>y</sub>=2), (n<sub>x</sub>=2, n<sub>y</sub>=1), or (n<sub>x</sub>=2, n<sub>y</sub>=2) — is assigned each time. Map the Gauss points/weights in each direction to the physical rectangle and approximate the double integral. Enter decimals accurate to <strong>at least 4 significant figures</strong>.</p>
+      <div class="interactive-demo">
+        <button id="p1-gauss2d-generateBtn" disabled onclick="p1Gauss2dGenerate()">Generate New Problem</button>
+        <div id="p1-gauss2d-display"></div>
+        <div class="quiz-section" id="p1-gauss2d-quiz-section">
+          <div id="p1-gauss2d-quiz-inputs"></div>
+          <button id="p1-gauss2d-quizCheckBtn" onclick="p1Gauss2dCheckQuiz()">Check Answer</button>
+        </div>
+        <div id="p1-gauss2d-quiz-feedback" class="quiz-feedback"></div>
+        <div id="p1-gauss2d-quiz-hint" class="quiz-hint hidden"></div>
+        <div id="p1-gauss2d-score-display" class="score-display"></div>
+      </div>
+    </div>
+
+    </div>
+
+    <div class="main-tab-content" id="main-tab-p2">
+
+    <h1 id="p2-problem-title">Problem 2. Maximum score = 4 | Total score = <span id="p2-total-score">0.0</span></h1>
+
+    <div class="p2-tab-bar" id="p2-tab-bar">
+      <button class="active" id="p2-matinv-newBtn" onclick="p2NewMatrix()" disabled>New Matrix</button>
+    </div>
+
+    <div class="p2-tab-content active" id="p2-tab-matinv">
+      <p class="subtitle">An 8&times;8 symmetric matrix A with integer entries between &minus;10 and 10 is generated below. Download it as a CSV file, compute its inverse A<sup>&minus;1</sup> (by hand, in a spreadsheet, or with software), save your result as a CSV file with the same 8&times;8 layout, and upload it below. <strong>Uploading a file automatically checks it</strong> entrywise, accurate to <strong>4 decimal places</strong> &mdash; there's no separate "Check Answer" step.</p>
+
+      <div class="fem-error" id="p2-matinv-error"></div>
+
+      <div class="fem-sheet matinv-grid" id="p2-matinv-display"></div>
+      <div class="fem-edit-bar">
+        <button id="p2-matinv-downloadBtn" onclick="p2MatinvDownload()">Download Matrix A (CSV)</button>
+      </div>
+
+      <div class="matinv-upload-row">
+        <label for="p2-matinv-upload"><b>Upload your inverse (CSV):</b></label>
+        <input type="file" id="p2-matinv-upload" accept=".csv,text/csv" onchange="p2MatinvFileChosen()" disabled>
+      </div>
+      <p class="fem-hint">"Choose file" unlocks once you've downloaded Matrix A above. "New Matrix" unlocks after checking an answer that isn't yet fully correct &mdash; once you reach the full 4/4, it stays locked.</p>
+      <div id="p2-matinv-quiz-feedback" class="quiz-feedback"></div>
+      <div id="p2-matinv-quiz-hint" class="quiz-hint hidden"></div>
+      <div id="p2-matinv-score-display" class="score-display"></div>
+    </div>
+
+    </div>
+
+    <div class="main-tab-content" id="main-tab-p3">
+
+    <h1 id="p3-problem-title">Problem 3. Maximum score = 25 | Total score = <span id="p3-total-score">0.0</span></h1>
+
+    <div class="p3-tab-bar" id="p3-tab-bar">
+      <button class="active" onclick="p3NewFrame()">New 2D Frame</button>
+    </div>
+
+    <div class="p3-tab-content active" id="p3-tab-frame">
+      <p class="subtitle">A rigid-jointed 2D frame has one <strong>free joint</strong> loaded by a point force and a moment; every other joint is a fully fixed support (fixed against x-translation, y-translation, and rotation). Each member is a frame (beam-column) element with both axial and bending stiffness. Work through the FEM steps.</p>
+
+      <div class="fem-input-panel" id="p3-frame-input-panel">
+        <div class="fem-field">
+          <label for="p3-frame-in-numMembers">Number of members (at the free joint)</label>
+          <select id="p3-frame-in-numMembers" onchange="p3FrameRebuildMemberFields()" disabled>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </div>
+        <div class="fem-row2">
+          <div class="fem-field">
+            <label for="p3-frame-in-fx">Free joint x-coordinate</label>
+            <input type="text" id="p3-frame-in-fx" value="0" readonly>
+          </div>
+          <div class="fem-field">
+            <label for="p3-frame-in-fy">Free joint y-coordinate</label>
+            <input type="text" id="p3-frame-in-fy" value="0" readonly>
+          </div>
+        </div>
+        <div id="p3-frame-member-fields"></div>
+        <div class="fem-row2">
+          <div class="fem-field">
+            <label for="p3-frame-in-Fx">Applied load F<sub>x</sub> at free joint</label>
+            <input type="text" id="p3-frame-in-Fx" value="5" readonly>
+          </div>
+          <div class="fem-field">
+            <label for="p3-frame-in-Fy">Applied load F<sub>y</sub> at free joint</label>
+            <input type="text" id="p3-frame-in-Fy" value="-8" readonly>
+          </div>
+          <div class="fem-field">
+            <label for="p3-frame-in-M">Applied moment M at free joint</label>
+            <input type="text" id="p3-frame-in-M" value="3" readonly>
+          </div>
+        </div>
+        <p class="fem-hint">Each member rigidly connects one fixed support to the free joint. EA is the member's axial rigidity (Young's modulus &times; area) and EI is its bending rigidity (Young's modulus &times; moment of inertia).</p>
+      </div>
+      <div class="fem-edit-bar">
+        <button id="p3-frame-exportBtn" onclick="p3FrameExport()">Export</button>
+        <button id="p3-frame-importBtn" onclick="document.getElementById('p3-frame-importFile').click()">Import</button>
+        <input type="file" id="p3-frame-importFile" accept=".csv,text/csv" style="display:none;" onchange="p3FrameImportFileChosen()">
+        <button id="p3-frame-drawBtn" onclick="p3FrameDraw()">Draw Diagram &amp; Start</button>
+      </div>
+      <div class="fem-error" id="p3-frame-error"></div>
+      <div class="fem-sheet" id="p3-frame-diagram"></div>
+
+      <div id="p3-frame-steps"></div>
+      <div class="score-display" id="p3-frame-score-display"></div>
+    </div>
+
+    </div>
+
+    <script>
+      // ═══════════════════════════════════════════
+      //  SHARED / GLOBAL SCORE AGGREGATION
+      // ═══════════════════════════════════════════
+      // iGrade controls whether editable/interactive controls that would let
+      // a student change the assigned problem instance are shown. iGrade = 0
+      // (the default) is the normal student-facing grading mode; set
+      // iGrade = 1 to re-enable those controls (e.g. for instructor preview).
+      var iGrade = 0
+
+      var p1Total = 0, p2Total = 0, p3Total = 0
+
+      window.resumeBaselineScore = 0
+
+      window.hwClamp = function (v, lo, hi) {
+        v = Number(v)
+        if (!isFinite(v)) v = 0
+        return Math.max(lo, Math.min(hi, v))
+      }
+
+      // Shared helper for clamping a single sub-tab's running score into
+      // [0, max]. Every place that writes tabScores.<key> should route the
+      // value through this so no tab can drift negative or over its cap.
+      window.clampScore = function (v, max) {
+        v = Number(v)
+        if (!isFinite(v)) v = 0
+        return Math.max(0, Math.min(max, v))
+      }
+
+      // ═══════════════════════════════════════════
+      //  SHARED SIGNIFICANT-FIGURE TOLERANCE HELPERS
+      //  Used by both Problem 1 (Gauss integration) and Problem 3 (2D frame
+      //  FEM) to grade non-integer numeric answers to a fixed number of
+      //  significant figures instead of requiring exact equality.
+      // ═══════════════════════════════════════════
+      window.isEffectivelyInteger = function (v) {
+        return isFinite(v) && Math.abs(v - Math.round(v)) < 1e-9
+      }
+      // Half a unit in the last significant figure, e.g. sigFigs=3 on
+      // expected=123.4 -> tolerance 0.05; expected=0 falls back to a fixed
+      // small tolerance since there's no magnitude to scale from.
+      window.sigFigsTolerance = function (expected, sigFigs) {
+        expected = Number(expected)
+        if (!isFinite(expected) || expected === 0) return 0.5 * Math.pow(10, -(sigFigs - 1))
+        const exponent = Math.floor(Math.log10(Math.abs(expected)))
+        return 0.5 * Math.pow(10, exponent - sigFigs + 1)
+      }
+      // Exact integers are graded exactly; everything else is graded to
+      // sigFigs significant figures.
+      window.toleranceForSigFigs = function (expected, sigFigs) {
+        return window.isEffectivelyInteger(expected) ? 1e-6 : window.sigFigsTolerance(expected, sigFigs)
+      }
+      window.closeEnoughSigFigs = function (userVal, expected, sigFigs) {
+        if (!isFinite(userVal) || !isFinite(expected)) return false
+        return Math.abs(userVal - expected) <= window.toleranceForSigFigs(expected, sigFigs)
+      }
+      // Placeholder text hinting how precisely to enter a non-integer
+      // expected answer; integers need no such hint.
+      window.sigFigsNote = function (expected, sigFigs) {
+        return window.isEffectivelyInteger(expected) ? "" : `${sigFigs} sig figs`
+      }
+
+      const HOMEWORK_GRAND_MAX = 45
+      const P1_MAX = 16
+      const P2_MAX = 4
+      const P3_MAX = 25
+
+      function updateGrandTotal() {
+        const baseline = window.hwClamp(window.resumeBaselineScore || 0, 0, HOMEWORK_GRAND_MAX)
+        const p1c = window.hwClamp(p1Total, 0, P1_MAX)
+        const p2c = window.hwClamp(p2Total, 0, P2_MAX)
+        const p3c = window.hwClamp(p3Total, 0, P3_MAX)
+        const total = window.hwClamp(baseline + p1c + p2c + p3c, 0, HOMEWORK_GRAND_MAX)
+        document.getElementById('grand-total').textContent = total.toFixed(1)
+        document.getElementById('summary-p1-score').textContent = p1c.toFixed(1)
+        document.getElementById('summary-p2-score').textContent = p2c.toFixed(1)
+        document.getElementById('summary-p3-score').textContent = p3c.toFixed(1)
+        const baselineRow = document.getElementById('summary-baseline-row')
+        if (baseline > 0) {
+          baselineRow.classList.remove('hidden')
+          document.getElementById('summary-baseline-score').textContent = baseline.toFixed(1)
+        } else {
+          baselineRow.classList.add('hidden')
+        }
+      }
+
+      window.reportP1Total = function (t) { p1Total = t; updateGrandTotal() }
+      window.reportP2Total = function (t) { p2Total = t; updateGrandTotal() }
+      window.reportP3Total = function (t) { p3Total = t; updateGrandTotal() }
+
+      function switchMainTab(name) {
+        document.querySelectorAll('.main-tab-content').forEach(el => el.classList.remove('active'))
+        document.querySelectorAll('#main-tab-bar button').forEach(el => el.classList.remove('active'))
+        document.getElementById('main-tab-' + name).classList.add('active')
+        const idx = { summary: 0, p1: 1, p2: 2, p3: 3 }[name]
+        document.querySelectorAll('#main-tab-bar button')[idx].classList.add('active')
+      }
+    </script>
+
+    <script>
+      // ═══════════════════════════════════════════
+      //  LIGHTWEIGHT "CODED SCORE" GENERATOR / DECODER
+      // ═══════════════════════════════════════════
+      (function () {
+        const HOMEWORK_ID = "HW4"
+        const HOMEWORK_MAX = 30
+        const CODE_LIFETIME_MS = 14 * 24 * 60 * 60 * 1000 // 14 days
+        const SALT = "fem-hw4-2026-v1"
+
+        function simpleHash(str) {
+          let h = 0
+          for (let i = 0; i < str.length; i++) { h = (Math.imul(31, h) + str.charCodeAt(i)) | 0 }
+          return (h >>> 0).toString(36).toUpperCase()
+        }
+
+        async function sha256Hex(str) {
+          const bytes = new TextEncoder().encode(str)
+          const digest = await crypto.subtle.digest("SHA-256", bytes)
+          return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("")
+        }
+
+        function sanitize(field) { return String(field).replace(/[|~]/g, " ").trim() }
+        function b64EncodeUnicode(str) { return btoa(unescape(encodeURIComponent(str))) }
+        function b64DecodeUnicode(str) { return decodeURIComponent(escape(atob(str))) }
+
+        const P1_KEYS = ["quad", "bilin", "gauss1d", "gauss2d"]
+        const P2_KEYS = ["matinv"]
+        const P3_KEYS = ["frame"]
+
+        function clamp(v, lo, hi) {
+          return window.hwClamp ? window.hwClamp(v, lo, hi) : Math.max(lo, Math.min(hi, Number(v) || 0))
+        }
+
+        function csvFromScores(getterName, keys, max) {
+          const getter = window[getterName]
+          const scores = typeof getter === "function" ? getter() : {}
+          return keys.map(k => clamp(scores[k] || 0, 0, max).toFixed(1)).join(",")
+        }
+
+        function zipKeysClamped(keys, values) {
+          const obj = {}
+          keys.forEach((k, i) => { obj[k] = clamp(values[i] || 0, 0, Infinity) })
+          return obj
+        }
+
+        window.generateSubmissionCode = async function () {
+          const nameEl = document.getElementById("student-name-input")
+          const idEl = document.getElementById("student-id-input")
+          const warnEl = document.getElementById("code-warning-msg")
+          const name = sanitize(nameEl.value)
+          const id = sanitize(idEl.value)
+
+          if (!name || !id) {
+            warnEl.style.color = ""
+            warnEl.textContent = "Please enter both your name and your Canvas login/ID before generating a code."
+            warnEl.classList.remove("hidden")
+            document.getElementById("code-output-row").classList.add("hidden")
+            return
+          }
+          warnEl.classList.add("hidden")
+
+          const scoreText = document.getElementById("grand-total").textContent
+          const score = clamp(parseFloat(scoreText) || 0, 0, HOMEWORK_MAX)
+
+          if (score === 0) {
+            const proceed = confirm(
+              "Your total score is currently 0.0 — you haven't answered anything yet. " +
+              "Generate a submission code anyway?"
+            )
+            if (!proceed) return
+          }
+
+          const p1csv = csvFromScores("p1GetTabScores", P1_KEYS, 16)
+          const p2csv = csvFromScores("p2GetTabScores", P2_KEYS, 4)
+          const p3csv = csvFromScores("p3GetTabScores", P3_KEYS, 25)
+          const timestamp = Date.now()
+
+          // Persist Problem 2's current matrix (plus its download/check
+          // progress flags) so that resuming this code later restores the
+          // exact matrix A the student already downloaded, rather than
+          // handing them a fresh random one that wouldn't match a CSV
+          // they've already saved to their computer.
+          const matState = (typeof window.p2GetMatrixState === "function") ? window.p2GetMatrixState() : null
+          const matAField = matState
+            ? `${matState.downloaded ? 1 : 0},${matState.checked ? 1 : 0},${matState.values.join(",")}`
+            : ""
+
+          const payload = `${name}|${id}|${p1csv}|${p2csv}|${p3csv}|${HOMEWORK_MAX}|${score.toFixed(1)}|${timestamp}|${matAField}`
+          const encodedPayload = b64EncodeUnicode(payload)
+          const digest = await sha256Hex(payload + "|" + SALT)
+          const checksum = digest.slice(0, 12)
+          const code = `${HOMEWORK_ID}-${encodedPayload}-${checksum}`
+
+          document.getElementById("submission-code-output").value = code
+          document.getElementById("code-output-row").classList.remove("hidden")
+          document.getElementById("code-score-snapshot").textContent = score.toFixed(1)
+          updatePrintHeader(name, id)
+
+          const copied = await attemptCopyToClipboard(code)
+          document.getElementById("confirm-name").textContent = name
+          document.getElementById("confirm-id").textContent = id
+          document.getElementById("confirm-score").textContent = `${score.toFixed(1)} / ${HOMEWORK_MAX}`
+          document.getElementById("confirm-datetime").textContent = new Date(timestamp).toLocaleString()
+          const copyStatusEl = document.getElementById("confirm-copy-status")
+          if (copied) {
+            copyStatusEl.textContent = "\u2713 Code copied to clipboard."
+            copyStatusEl.className = "copy-status copied"
+          } else {
+            copyStatusEl.textContent = "Code generated \u2014 click \"Copy\" above, then paste it into Canvas."
+            copyStatusEl.className = "copy-status manual"
+          }
+          document.getElementById("code-confirmation").classList.remove("hidden")
+
+          if (!nameEl.readOnly) lockIdentityFields()
+        }
+
+        async function attemptCopyToClipboard(text) {
+          const output = document.getElementById("submission-code-output")
+          output.select()
+          output.setSelectionRange(0, 99999)
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            try { await navigator.clipboard.writeText(text); return true }
+            catch (e) { try { return document.execCommand("copy") } catch (e2) { return false } }
+          }
+          try { return document.execCommand("copy") } catch (e) { return false }
+        }
+
+        window.copySubmissionCode = async function () {
+          const output = document.getElementById("submission-code-output")
+          const copied = await attemptCopyToClipboard(output.value)
+          const copyStatusEl = document.getElementById("confirm-copy-status")
+          if (copyStatusEl && !document.getElementById("code-confirmation").classList.contains("hidden")) {
+            if (copied) {
+              copyStatusEl.textContent = "\u2713 Code copied to clipboard."
+              copyStatusEl.className = "copy-status copied"
+            } else {
+              copyStatusEl.textContent = "Could not copy automatically \u2014 select the code above and copy it manually."
+              copyStatusEl.className = "copy-status manual"
+            }
+          }
+        }
+
+        function lockIdentityFields() {
+          const nameEl = document.getElementById("student-name-input")
+          const idEl = document.getElementById("student-id-input")
+          nameEl.readOnly = true; idEl.readOnly = true
+          nameEl.classList.add("locked"); idEl.classList.add("locked")
+          document.getElementById("identity-locked-note").classList.remove("hidden")
+        }
+
+        function updatePrintHeader(name, id) {
+          const nameSpan = document.getElementById("print-header-name")
+          const idSpan = document.getElementById("print-header-id")
+          if (nameSpan) nameSpan.textContent = name || ""
+          if (idSpan) idSpan.textContent = id || ""
+        }
+
+        window.printSummary = function () {
+          const nameEl = document.getElementById("student-name-input")
+          const idEl = document.getElementById("student-id-input")
+          updatePrintHeader(nameEl ? nameEl.value : "", idEl ? idEl.value : "")
+          const dateSpan = document.getElementById("print-header-date")
+          if (dateSpan) dateSpan.textContent = new Date().toLocaleString()
+          window.print()
+        }
+
+        window.unlockIdentityAndReset = function () {
+          const sure = confirm(
+            "This unlocks your name/ID fields and completely resets your progress on this " +
+            "page — every sub-tab starts over from scratch, as if you'd just opened it fresh. " +
+            "This can't be undone (unless you have a code saved to resume from). Continue?"
+          )
+          if (!sure) return
+          location.reload()
+        }
+
+        window.resumeFromCode = async function () {
+          const codeInput = document.getElementById("resume-code-input")
+          const warnEl = document.getElementById("resume-warning-msg")
+          const nameEl = document.getElementById("student-name-input")
+          const idEl = document.getElementById("student-id-input")
+
+          if (nameEl.readOnly) {
+            warnEl.textContent = "Your name and ID are already locked for this session. Use \"Unlock Identity / Start Over\" below to resume with a different code."
+            warnEl.classList.remove("hidden")
+            return
+          }
+
+          const decoded = await decodeOneCode(codeInput.value.trim())
+          if (!decoded || decoded.error) {
+            warnEl.textContent = decoded ? decoded.error : "That doesn't look like a valid code. Check that you copied it in full."
+            warnEl.classList.remove("hidden")
+            return
+          }
+          if (!decoded.valid) {
+            warnEl.textContent = "This code failed verification (checksum mismatch) and can't be used to resume. Paste it exactly as it was generated, or contact your instructor."
+            warnEl.classList.remove("hidden")
+            return
+          }
+          if (decoded.expired) {
+            warnEl.textContent = "This code has expired (codes are valid for 14 days after they're generated). Please contact your instructor if you need to resume old progress."
+            warnEl.classList.remove("hidden")
+            return
+          }
+          if (String(decoded.max) !== String(HOMEWORK_MAX)) {
+            warnEl.textContent = `This code was generated for a different version of the assignment (max ${decoded.max}, current max ${HOMEWORK_MAX}) and can't be used to resume here.`
+            warnEl.classList.remove("hidden")
+            return
+          }
+
+          warnEl.classList.add("hidden")
+          nameEl.value = decoded.name
+          idEl.value = decoded.id
+          updatePrintHeader(decoded.name, decoded.id)
+
+          if (decoded.breakdown) {
+            window.resumeBaselineScore = 0
+            if (window.p1SetTabScores) window.p1SetTabScores(decoded.breakdown.p1)
+            if (window.p2SetTabScores) window.p2SetTabScores(decoded.breakdown.p2)
+            if (decoded.breakdown.p3 && window.p3SetTabScores) window.p3SetTabScores(decoded.breakdown.p3)
+            if (decoded.matA && window.p2SetMatrixState) window.p2SetMatrixState(decoded.matA)
+          } else {
+            window.resumeBaselineScore = clamp(parseFloat(decoded.score) || 0, 0, HOMEWORK_MAX)
+            if (typeof updateGrandTotal === "function") updateGrandTotal()
+          }
+
+          lockIdentityFields()
+
+          const noteEl = document.getElementById("code-warning-msg")
+          noteEl.classList.remove("hidden")
+          noteEl.style.color = "#1565c0"
+          const startScore = clamp(parseFloat(decoded.score) || 0, 0, HOMEWORK_MAX)
+          noteEl.textContent = `Resumed as ${decoded.name} with a restored score of ${startScore.toFixed(1)} / ${decoded.max}. ` +
+            `Any new work you do now adds on top of that restored total — generate a new code when you're done.`
+        }
+
+        window.toggleInstructorPanel = function () {
+          document.getElementById("instructor-panel").classList.toggle("open")
+        }
+
+        async function decodeOneCode(rawLine) {
+          const match = rawLine.match(/HW\d*-[A-Za-z0-9+/=]+-[A-Za-z0-9]+/)
+          if (!match) return null
+          const parts = match[0].split("-")
+          if (parts.length !== 3) return null
+          const [prefix, encodedPayload, checksum] = parts
+          let payload
+          try { payload = b64DecodeUnicode(encodedPayload) }
+          catch (e) { return { raw: rawLine, error: "Could not decode (malformed code)." } }
+          const fields = payload.split("|")
+
+          let valid, scheme
+          if (/^[0-9a-f]{12}$/i.test(checksum)) {
+            scheme = "sha256"
+            const digest = await sha256Hex(payload + "|" + SALT)
+            valid = digest.slice(0, 12).toLowerCase() === checksum.toLowerCase()
+          } else {
+            scheme = "legacy"
+            const expected = simpleHash(payload + "|" + SALT).slice(0, 6)
+            valid = expected === checksum
+          }
+
+          if (fields.length === 9) {
+            const [name, id, p1csv, p2csv, p3csv, max, score, timestampStr, matAField] = fields
+            const breakdown = {
+              p1: zipKeysClamped(P1_KEYS, p1csv.split(",").map(Number)),
+              p2: zipKeysClamped(P2_KEYS, p2csv.split(",").map(Number)),
+              p3: zipKeysClamped(P3_KEYS, p3csv.split(",").map(Number)),
+            }
+            const timestamp = parseInt(timestampStr, 10)
+            const hasTimestamp = isFinite(timestamp)
+            const expired = hasTimestamp && (Date.now() - timestamp > CODE_LIFETIME_MS)
+            let matA = null
+            if (matAField) {
+              const nums = matAField.split(",").map(Number)
+              if (nums.length === 66 && !nums.some(Number.isNaN)) {
+                matA = { downloaded: !!nums[0], checked: !!nums[1], values: nums.slice(2) }
+              }
+            }
+            return { raw: rawLine, prefix, name, id, score, max, valid, breakdown, matA, timestamp: hasTimestamp ? timestamp : null, expired, scheme }
+          }
+          if (fields.length === 8) {
+            const [name, id, p1csv, p2csv, p3csv, max, score, timestampStr] = fields
+            const breakdown = {
+              p1: zipKeysClamped(P1_KEYS, p1csv.split(",").map(Number)),
+              p2: zipKeysClamped(P2_KEYS, p2csv.split(",").map(Number)),
+              p3: zipKeysClamped(P3_KEYS, p3csv.split(",").map(Number)),
+            }
+            const timestamp = parseInt(timestampStr, 10)
+            const hasTimestamp = isFinite(timestamp)
+            const expired = hasTimestamp && (Date.now() - timestamp > CODE_LIFETIME_MS)
+            return { raw: rawLine, prefix, name, id, score, max, valid, breakdown, matA: null, timestamp: hasTimestamp ? timestamp : null, expired, scheme }
+          }
+          if (fields.length === 6) {
+            const [name, id, p1csv, p2csv, max, score] = fields
+            const breakdown = {
+              p1: zipKeysClamped(P1_KEYS, p1csv.split(",").map(Number)),
+              p2: zipKeysClamped(P2_KEYS, p2csv.split(",").map(Number)),
+            }
+            return { raw: rawLine, prefix, name, id, score, max, valid, breakdown, timestamp: null, expired: false, scheme }
+          }
+          if (fields.length === 4) {
+            const [name, id, score, max] = fields
+            return { raw: rawLine, prefix, name, id, score, max, valid, timestamp: null, expired: false, scheme }
+          }
+          return { raw: rawLine, error: "Could not decode (malformed payload)." }
+        }
+
+        function formatBreakdownRow(label, obj, max) {
+          const total = Object.values(obj).reduce((a, b) => a + b, 0)
+          const parts = Object.entries(obj).map(([k, v]) => `${k}: ${v.toFixed(1)}`).join(", ")
+          return `<div class="breakdown-row"><strong>${label} (${total.toFixed(1)} / ${max}):</strong> ${parts}</div>`
+        }
+
+        window.decodeSubmissionCodes = async function () {
+          const input = document.getElementById("decode-input").value
+          const lines = input.split("\n").map(l => l.trim()).filter(Boolean)
+          const resultsEl = document.getElementById("decode-results")
+
+          if (lines.length === 0) {
+            resultsEl.innerHTML = '<p class="code-warning">Paste at least one code above.</p>'
+            return
+          }
+
+          resultsEl.innerHTML = '<p class="code-note">Decoding\u2026</p>'
+          const decoded = await Promise.all(lines.map(decodeOneCode))
+
+          let html = ""
+          decoded.forEach(d => {
+            if (!d || d.error) {
+              html += `<div class="decode-card invalid"><p class="code-warning">${d ? d.error : "Not a recognized code"}: "${(d ? d.raw : "").replace(/</g, "&lt;")}"</p></div>`
+              return
+            }
+            let statusClass, statusText
+            if (!d.valid) { statusClass = "invalid"; statusText = "Invalid / Tampered" }
+            else if (d.expired) { statusClass = "expired"; statusText = "Expired" }
+            else { statusClass = "valid"; statusText = "Valid" }
+
+            const pct = ((parseFloat(d.score) / parseFloat(d.max)) * 100).toFixed(1)
+            const generatedText = d.timestamp ? new Date(d.timestamp).toLocaleString() : "Not recorded (older code format, no expiration)"
+            const expiresText = d.timestamp ? new Date(d.timestamp + CODE_LIFETIME_MS).toLocaleString() : "N/A \u2014 expiration not enabled for this code"
+
+            let breakdownHtml
+            if (d.breakdown) {
+              breakdownHtml = formatBreakdownRow("Problem 1", d.breakdown.p1, 16) +
+                formatBreakdownRow("Problem 2", d.breakdown.p2, 4)
+              breakdownHtml += d.breakdown.p3
+                ? formatBreakdownRow("Problem 3", d.breakdown.p3, 25)
+                : '<div class="breakdown-row">Problem 3: not available \u2014 this code predates Problem 3.</div>'
+            } else {
+              breakdownHtml = '<div class="breakdown-row">Not available \u2014 this is an older lump-total code with no per-problem breakdown.</div>'
+            }
+
+            html += `
+              <div class="decode-card ${statusClass}">
+                <div class="decode-card-header">
+                  <span class="decode-name">${d.name}</span>
+                  <span class="decode-status-badge ${statusClass}">${statusText}</span>
+                </div>
+                <table class="decode-info-table">
+                  <tr><td class="label">ID / Login:</td><td>${d.id}</td></tr>
+                  <tr><td class="label">Total Score:</td><td>${parseFloat(d.score).toFixed(1)} / ${d.max} (${pct}%)</td></tr>
+                  <tr><td class="label">Generated:</td><td>${generatedText}</td></tr>
+                  <tr><td class="label">Expires:</td><td>${expiresText}</td></tr>
+                </table>
+                <div class="decode-breakdown">${breakdownHtml}</div>
+              </div>`
+          })
+
+          html += '<p class="code-note">"Invalid / Tampered" codes have a checksum that doesn\'t match the payload \u2014 they may have been hand-edited. "Expired" codes are older than the 14-day validity window. Review both before entering a grade.</p>'
+          resultsEl.innerHTML = html
+
+          window._decodedRecords = decoded.filter(d => d && !d.error)
+          document.getElementById("csv-step").classList.toggle("hidden", window._decodedRecords.length === 0)
+        }
+
+        function parseCSV(text) {
+          const rows = []
+          let row = [], field = "", inQuotes = false
+          for (let i = 0; i < text.length; i++) {
+            const c = text[i]
+            if (inQuotes) {
+              if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++ } else { inQuotes = false } }
+              else { field += c }
+            } else {
+              if (c === '"') { inQuotes = true }
+              else if (c === ",") { row.push(field); field = "" }
+              else if (c === "\r") { /* skip */ }
+              else if (c === "\n") { row.push(field); rows.push(row); row = []; field = "" }
+              else { field += c }
+            }
+          }
+          if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row) }
+          return rows.filter(r => !(r.length === 1 && r[0] === ""))
+        }
+
+        function unparseCSV(rows) {
+          return rows.map(row => row.map(field => {
+            const f = field == null ? "" : String(field)
+            return /[",\n]/.test(f) ? '"' + f.replace(/"/g, '""') + '"' : f
+          }).join(",")).join("\r\n")
+        }
+
+        function downloadTextFile(text, filename, mime) {
+          const blob = new Blob([text], { type: mime })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement("a")
+          a.href = url; a.download = filename
+          document.body.appendChild(a); a.click(); document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        }
+
+        function normalizeName(n) {
+          return n.toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean).sort().join(" ")
+        }
+
+        window.handleGradebookCsvUpload = function (event) {
+          const file = event.target.files[0]
+          const summaryEl = document.getElementById("csv-match-summary")
+          if (!file) return
+          const reader = new FileReader()
+          reader.onload = function (e) {
+            const rows = parseCSV(e.target.result)
+            if (rows.length < 2) {
+              summaryEl.innerHTML = '<p class="code-warning">Could not read this CSV (too few rows).</p>'
+              return
+            }
+            window._gradebookCsvOriginal = { header: rows[0], rows: rows.slice(1) }
+            const excludeExact = ["student", "id", "sis user id", "sis login id", "section", "root account", "integration id"]
+            const excludeContains = ["current score", "final score", "current grade", "final grade", "unposted"]
+            const select = document.getElementById("csv-assignment-column")
+            select.innerHTML = ""
+            rows[0].forEach((h, idx) => {
+              const hl = h.trim().toLowerCase()
+              if (excludeExact.includes(hl)) return
+              if (excludeContains.some(x => hl.includes(x))) return
+              const opt = document.createElement("option")
+              opt.value = idx; opt.textContent = h
+              select.appendChild(opt)
+            })
+            document.getElementById("csv-column-picker").classList.remove("hidden")
+            summaryEl.innerHTML = ""
+          }
+          reader.readAsText(file)
+        }
+
+        window.fillGradebookCsv = function () {
+          const decoded = window._decodedRecords || []
+          const summaryEl = document.getElementById("csv-match-summary")
+          const original = window._gradebookCsvOriginal
+          if (decoded.length === 0) {
+            summaryEl.innerHTML = '<p class="code-warning">Decode some codes in Step 1 first.</p>'
+            return
+          }
+          if (!original) {
+            summaryEl.innerHTML = '<p class="code-warning">Upload a gradebook CSV first.</p>'
+            return
+          }
+
+          const modeInput = document.querySelector('input[name="csv-fill-mode"]:checked')
+          const mode = modeInput ? modeInput.value : "overwrite"
+
+          const header = original.header.slice()
+          const rows = original.rows.map(row => row.slice())
+
+          const colIdx = parseInt(document.getElementById("csv-assignment-column").value, 10)
+          const headerLower = header.map(h => h.trim().toLowerCase())
+          const idColCandidates = ["sis login id", "sis user id", "id", "email", "email address", "login id", "login", "username", "canvas id"]
+          const idColIdxs = []
+          idColCandidates.forEach(name => { const i = headerLower.indexOf(name); if (i !== -1) idColIdxs.push(i) })
+          const studentColIdx = headerLower.indexOf("student")
+
+          const matched = [], skipped = [], mismatched = [], expiredList = [], unmatched = []
+
+          decoded.forEach(d => {
+            if (d.expired) { expiredList.push(d.name); return }
+            let matchedRow = null
+            for (const row of rows) {
+              for (const ci of idColIdxs) {
+                if (row[ci] && row[ci].trim().toLowerCase() === d.id.trim().toLowerCase()) { matchedRow = row; break }
+              }
+              if (matchedRow) break
+            }
+            if (!matchedRow && studentColIdx !== -1) {
+              const target = normalizeName(d.name)
+              for (const row of rows) {
+                if (row[studentColIdx] && normalizeName(row[studentColIdx]) === target) { matchedRow = row; break }
+              }
+            }
+            if (!matchedRow) { unmatched.push(d.name); return }
+            const existing = matchedRow[colIdx]
+            if (mode === "blank" && existing && String(existing).trim() !== "") { skipped.push(d.name); return }
+            matchedRow[colIdx] = d.score
+            matched.push(d.name)
+            if (!d.valid) mismatched.push(d.name)
+          })
+
+          const csvText = unparseCSV([header, ...rows])
+          downloadTextFile(csvText, "gradebook_updated.csv", "text/csv")
+
+          const modeLabel = mode === "blank" ? "only blank cells" : "overwriting existing scores"
+          let summary = `<p class="code-note">Mode: <strong>${modeLabel}</strong>. ` +
+            `Filled <strong>${matched.length}</strong> of ${decoded.length} decoded score(s) into "${header[colIdx]}." ` +
+            `A file named <strong>gradebook_updated.csv</strong> has been downloaded \u2014 re-upload it via Canvas Grades &rarr; Import.</p>`
+          summary += '<ul class="csv-summary-list">'
+          summary += `<li>Matched &amp; filled: ${matched.length}</li>`
+          if (skipped.length) summary += `<li>Skipped (already had a value, blank-only mode): ${skipped.length} \u2014 ${skipped.join(", ")}</li>`
+          if (mismatched.length) summary += `<li>Filled but checksum MISMATCH (verify manually): ${mismatched.length} \u2014 ${mismatched.join(", ")}</li>`
+          if (expiredList.length) summary += `<li>Not filled, code EXPIRED: ${expiredList.length} \u2014 ${expiredList.join(", ")}</li>`
+          if (unmatched.length) summary += `<li>Could not auto-match (enter manually): ${unmatched.length} \u2014 ${unmatched.join(", ")}</li>`
+          summary += '</ul>'
+          summaryEl.innerHTML = summary
+        }
+      })();
+    </script>
+
+    <script>
+      // ═══════════════════════════════════════════
+      //  PROBLEM 1: INTERPOLATION & QUADRATURE
+      //  (a) Quadratic (Lagrange) Interp., (b) Bilinear Interp.,
+      //  (c) 1D Gauss Integration, (d) 2D Gauss Integration
+      // ═══════════════════════════════════════════
+      (function () {
+
+      function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min }
+      function randomNonZeroInt(min, max) { let v; do { v = randomInt(min, max) } while (v === 0); return v }
+      function randomChoice(arr) { return arr[randomInt(0, arr.length - 1)] }
+      const formatInput = n => (n < 0 ? `(${n})` : `${n}`)
+      const fmtNum = n => { const r = Math.round(n * 1000) / 1000; return Object.is(r, -0) ? "0" : `${r}` }
+
+      // Values of the three quadratic Lagrange basis functions (through
+      // the 3 sorted nodes) evaluated at x. Used by the quadratic
+      // interpolation tab.
+      function quadLagrangeBasis(x, nodes) {
+        const [x0, x1, x2] = nodes
+        const L0 = ((x - x1) * (x - x2)) / ((x0 - x1) * (x0 - x2))
+        const L1 = ((x - x0) * (x - x2)) / ((x1 - x0) * (x1 - x2))
+        const L2 = ((x - x0) * (x - x1)) / ((x2 - x0) * (x2 - x1))
+        return [L0, L1, L2]
+      }
+
+      // Gauss-Legendre points/weights on the parent domain [-1, 1], used
+      // by the 1D and 2D Gauss integration tabs.
+      const GAUSS_TABLE = {
+        1: { t: [0], w: [2] },
+        2: { t: [-1 / Math.sqrt(3), 1 / Math.sqrt(3)], w: [1, 1] },
+        3: { t: [-Math.sqrt(3 / 5), 0, Math.sqrt(3 / 5)], w: [5 / 9, 8 / 9, 5 / 9] },
+      }
+      // Renders a polynomial like "3x^4 - 2x^2 + 5" from coefficients and
+      // HTML variable labels (e.g. "x<sup>4</sup>"), skipping zero terms.
+      function polyTermsHTML(coeffs, labels) {
+        const parts = []
+        coeffs.forEach((c, i) => {
+          if (c === 0) return
+          const label = labels[i]
+          const abs = Math.abs(c)
+          const coefPart = (label !== "" && abs === 1) ? "" : String(abs)
+          parts.push({ neg: c < 0, text: coefPart + label })
+        })
+        if (parts.length === 0) return "0"
+        let out = (parts[0].neg ? "&minus;" : "") + parts[0].text
+        for (let i = 1; i < parts.length; i++) out += (parts[i].neg ? " &minus; " : " + ") + parts[i].text
+        return out
+      }
+      // 4 significant figures, matching the "at least 4 significant
+      // figures" instruction shown in the Gauss quadrature tabs; delegates
+      // to the shared helper also used by Problem 3.
+      const GAUSS_SIG_FIGS = 4
+      function gaussCloseEnough(userVal, expected) {
+        return window.closeEnoughSigFigs(userVal, expected, GAUSS_SIG_FIGS)
+      }
+
+      window.p1SwitchTab = function (name) {
+        document.querySelectorAll('.p1-tab-content').forEach(el => el.classList.remove('active'))
+        document.querySelectorAll('#p1-tab-bar button').forEach(el => el.classList.remove('active'))
+        document.getElementById('p1-tab-' + name).classList.add('active')
+        const idx = { quad: 0, bilin: 1, gauss1d: 2, gauss2d: 3 }[name]
+        document.querySelectorAll('#p1-tab-bar button')[idx].classList.add('active')
+      }
+
+      const tabScores = { quad: 0, bilin: 0, gauss1d: 0, gauss2d: 0 }
+      function updateTotalScore() {
+        const raw = tabScores.quad + tabScores.bilin + tabScores.gauss1d + tabScores.gauss2d
+        const total = window.hwClamp ? window.hwClamp(raw, 0, 16) : Math.max(0, Math.min(16, raw))
+        document.getElementById("p1-total-score").textContent = total.toFixed(1)
+        if (window.reportP1Total) window.reportP1Total(total)
+      }
+      const tabMaxes = { quad: 4, bilin: 4, gauss1d: 4, gauss2d: 4 }
+      window.p1GetTabScores = function () { return Object.assign({}, tabScores) };
+      window.p1SetTabScores = function (scores) {
+        Object.keys(tabScores).forEach(key => {
+          if (scores[key] !== undefined) {
+            const clamped = window.clampScore(scores[key], tabMaxes[key])
+            tabScores[key] = clamped
+            const el = document.getElementById(`p1-${key}-score-display`)
+            if (el) el.textContent = `Score: ${clamped.toFixed(1)}`
+          }
+        })
+        updateTotalScore()
+      };
+
+      // ═══════════════════════════════════════════
+      //  (a) QUADRATIC (LAGRANGE) INTERPOLATION
+      //  nProblems = 4 is this tab's max score; nAns = 2 points are added
+      //  per correct answer, so 2 correct answers reach the cap.
+      // ═══════════════════════════════════════════
+      (function () {
+        let nodeX, nodeF, xQuery, answer, coefA, coefB, coefC
+        var nScore = 0, nProblems = 4, nAns = 2
+        const generateBtn = document.getElementById("p1-quad-generateBtn")
+
+        window.p1QuadGenerate = function () {
+          generateBtn.disabled = true
+          coefA = randomNonZeroInt(-3, 3)
+          coefB = randomInt(-5, 5)
+          coefC = randomInt(-5, 5)
+
+          const pool = [-4, -3, -2, -1, 0, 1, 2, 3, 4]
+          nodeX = []
+          while (nodeX.length < 3) { const c = randomChoice(pool); if (!nodeX.includes(c)) nodeX.push(c) }
+          nodeX.sort((a, b) => a - b)
+          nodeF = nodeX.map(x => coefA * x * x + coefB * x + coefC)
+
+          do { xQuery = randomChoice(pool) } while (nodeX.includes(xQuery))
+          answer = coefA * xQuery * xQuery + coefB * xQuery + coefC
+
+          document.getElementById("p1-quad-display").innerHTML = `
+            <p>A single quadratic g(x) passes through the three points below:</p>
+            <table class="points-table">
+              <tr><th>x</th>${nodeX.map(x => `<td>${formatInput(x)}</td>`).join("")}</tr>
+              <tr><th>g(x)</th>${nodeF.map(f => `<td>${formatInput(f)}</td>`).join("")}</tr>
+            </table>
+            <p>Using Lagrange quadratic interpolation through these three points, find g(${formatInput(xQuery)}).</p>`
+
+          document.getElementById("p1-quad-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-quad-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-quad-quiz-inputs").innerHTML = `
+            <div class="quiz-input-row"><span>g(${formatInput(xQuery)}) = </span><input type="text" id="p1-quad-quiz-input"></div>`
+          document.getElementById("p1-quad-quizCheckBtn").disabled = false
+        }
+
+        window.p1QuadCheckQuiz = function () {
+          const input = document.getElementById("p1-quad-quiz-input")
+          const userVal = parseFloat(input.value)
+          const quizFeedback = document.getElementById("p1-quad-quiz-feedback")
+          const quizHint = document.getElementById("p1-quad-quiz-hint")
+
+          if (userVal === answer) {
+            input.classList.remove("incorrect"); input.classList.add("correct")
+            quizFeedback.textContent = "Correct!"
+            quizFeedback.className = "correct"; quizHint.classList.add("hidden")
+            nScore += nAns
+          } else {
+            input.classList.remove("correct"); input.classList.add("incorrect")
+            quizFeedback.textContent = "Not quite."
+            quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
+            const [f0, f1, f2] = nodeF
+            const x = xQuery
+            const [L0, L1, L2] = quadLagrangeBasis(x, nodeX)
+            quizHint.innerHTML = `<strong>Hint:</strong> g(x) = L<sub>0,2</sub>(x)&middot;g(x<sub>0</sub>) + L<sub>1,2</sub>(x)&middot;g(x<sub>1</sub>) + L<sub>2,2</sub>(x)&middot;g(x<sub>2</sub>).<br>
+              L<sub>0,2</sub>(${formatInput(x)}) = ${fmtNum(L0)}, &nbsp; L<sub>1,2</sub>(${formatInput(x)}) = ${fmtNum(L1)}, &nbsp; L<sub>2,2</sub>(${formatInput(x)}) = ${fmtNum(L2)}<br>
+              g(${formatInput(x)}) = (${fmtNum(L0)})(${formatInput(f0)}) + (${fmtNum(L1)})(${formatInput(f1)}) + (${fmtNum(L2)})(${formatInput(f2)}) = ${formatInput(answer)}.<br>
+              Correct answer: ${formatInput(answer)}`
+            quizHint.classList.remove("hidden")
+          }
+
+          document.getElementById("p1-quad-quizCheckBtn").disabled = true
+          nScore = window.clampScore(nScore, nProblems)
+          document.getElementById("p1-quad-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          tabScores.quad = window.clampScore(nScore, tabMaxes.quad); updateTotalScore()
+
+          if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        p1QuadGenerate()
+      })();
+
+      // ═══════════════════════════════════════════
+      //  (b) 2D BILINEAR INTERPOLATION
+      //  nProblems = 4 is this tab's max score; nAns = 2 points are added
+      //  per correct answer, so 2 correct answers reach the cap.
+      // ═══════════════════════════════════════════
+      (function () {
+        let x1v, x2v, y1v, y2v, f11, f21, f12, f22, xQuery, yQuery, answer
+        var nScore = 0, nProblems = 4, nAns = 2
+        const generateBtn = document.getElementById("p1-bilin-generateBtn")
+
+        window.p1BilinGenerate = function () {
+          generateBtn.disabled = true
+          const A = randomInt(-5, 5)
+          const B = randomInt(-3, 3)
+          const C = randomInt(-3, 3)
+          const D = randomInt(-2, 2)
+          const f = (x, y) => A + B * x + C * y + D * x * y
+
+          x1v = randomInt(-4, 0); x2v = x1v + randomInt(2, 4)
+          y1v = randomInt(-4, 0); y2v = y1v + randomInt(2, 4)
+
+          f11 = f(x1v, y1v); f21 = f(x2v, y1v); f12 = f(x1v, y2v); f22 = f(x2v, y2v)
+
+          xQuery = randomInt(x1v + 1, x2v - 1)
+          yQuery = randomInt(y1v + 1, y2v - 1)
+          answer = f(xQuery, yQuery)
+
+          document.getElementById("p1-bilin-display").innerHTML = `
+            <p>The value of a field f(x,y) is known at the four corners of a rectangle:</p>
+            <table class="points-table">
+              <tr><th>x</th><th>y</th><th>f(x,y)</th></tr>
+              <tr><td>${formatInput(x1v)}</td><td>${formatInput(y1v)}</td><td>${formatInput(f11)}</td></tr>
+              <tr><td>${formatInput(x2v)}</td><td>${formatInput(y1v)}</td><td>${formatInput(f21)}</td></tr>
+              <tr><td>${formatInput(x1v)}</td><td>${formatInput(y2v)}</td><td>${formatInput(f12)}</td></tr>
+              <tr><td>${formatInput(x2v)}</td><td>${formatInput(y2v)}</td><td>${formatInput(f22)}</td></tr>
+            </table>
+            <p>Using bilinear interpolation, find f(${formatInput(xQuery)}, ${formatInput(yQuery)}).</p>`
+
+          document.getElementById("p1-bilin-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-bilin-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-bilin-quiz-inputs").innerHTML = `
+            <div class="quiz-input-row"><span>f(${formatInput(xQuery)}, ${formatInput(yQuery)}) = </span><input type="text" id="p1-bilin-quiz-input"></div>`
+          document.getElementById("p1-bilin-quizCheckBtn").disabled = false
+        }
+
+        window.p1BilinCheckQuiz = function () {
+          const input = document.getElementById("p1-bilin-quiz-input")
+          const userVal = parseFloat(input.value)
+          const quizFeedback = document.getElementById("p1-bilin-quiz-feedback")
+          const quizHint = document.getElementById("p1-bilin-quiz-hint")
+
+          if (userVal === answer) {
+            input.classList.remove("incorrect"); input.classList.add("correct")
+            quizFeedback.textContent = "Correct!"
+            quizFeedback.className = "correct"; quizHint.classList.add("hidden")
+            nScore += nAns
+          } else {
+            input.classList.remove("correct"); input.classList.add("incorrect")
+            quizFeedback.textContent = "Not quite."
+            quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
+            const xi = (2 * xQuery - x1v - x2v) / (x2v - x1v)
+            const eta = (2 * yQuery - y1v - y2v) / (y2v - y1v)
+            quizHint.innerHTML = `<strong>Hint:</strong> Convert to normalized coordinates: &xi; = ${fmtNum(xi)}, &eta; = ${fmtNum(eta)}.<br>
+              f(&xi;,&eta;) = f<sub>11</sub>(1&minus;&xi;)(1&minus;&eta;)/4 + f<sub>21</sub>(1+&xi;)(1&minus;&eta;)/4 + f<sub>12</sub>(1&minus;&xi;)(1+&eta;)/4 + f<sub>22</sub>(1+&xi;)(1+&eta;)/4<br>
+              f(${formatInput(xQuery)},${formatInput(yQuery)}) = ${formatInput(answer)}.<br>
+              Correct answer: ${formatInput(answer)}`
+            quizHint.classList.remove("hidden")
+          }
+
+          document.getElementById("p1-bilin-quizCheckBtn").disabled = true
+          nScore = window.clampScore(nScore, nProblems)
+          document.getElementById("p1-bilin-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          tabScores.bilin = window.clampScore(nScore, tabMaxes.bilin); updateTotalScore()
+
+          if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        p1BilinGenerate()
+      })();
+
+      // ═══════════════════════════════════════════
+      //  (c) 1D GAUSS INTEGRATION  (1, 2, or 3 points, assigned randomly)
+      //  nProblems = 4 is this tab's max score; nAns = 2 points are added
+      //  per fully-correct submission, so 2 correct submissions reach the cap.
+      // ═══════════════════════════════════════════
+      (function () {
+        let n, a, b, c, d, e, xA, xB, halfLength, mid, ts, ws, xs, fs, answer
+        var nScore = 0, nProblems = 4, nAns = 2
+        const generateBtn = document.getElementById("p1-gauss1d-generateBtn")
+
+        window.p1Gauss1dGenerate = function () {
+          generateBtn.disabled = true
+          n = randomChoice([1, 2, 3])
+          a = randomNonZeroInt(-3, 3)
+          b = randomInt(-10, 10)
+          c = randomInt(-10, 10)
+          d = randomInt(-10, 10)
+          e = randomInt(-10, 10)
+          xA = randomInt(-2, 2)
+          xB = xA + randomInt(3, 6)
+          halfLength = (xB - xA) / 2
+          mid = (xB + xA) / 2
+
+          const table = GAUSS_TABLE[n]
+          ts = table.t.slice()
+          ws = table.w.slice()
+          const f = x => a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e
+          xs = ts.map(t => halfLength * t + mid)
+          fs = xs.map(f)
+          answer = halfLength * fs.reduce((sum, fv, i) => sum + ws[i] * fv, 0)
+
+          const fStr = polyTermsHTML([a, b, c, d, e], ["x<sup>4</sup>", "x<sup>3</sup>", "x<sup>2</sup>", "x", ""])
+
+          document.getElementById("p1-gauss1d-display").innerHTML = `
+            <p>Use ${n}-point Gauss quadrature to approximate:</p>
+            <p class="math-formula">&int;<sub>${formatInput(xA)}</sub><sup>${formatInput(xB)}</sup> (${fStr}) dx</p>`
+
+          let inputsHtml = ""
+          for (let i = 0; i < n; i++) {
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss point t<sub>${i + 1}</sub> (natural coordinate) = </span><input type="text" id="p1-gauss1d-quiz-t${i}" placeholder="${window.sigFigsNote(ts[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss weight w<sub>${i + 1}</sub> = </span><input type="text" id="p1-gauss1d-quiz-w${i}" placeholder="${window.sigFigsNote(ws[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Physical point x<sub>${i + 1}</sub> = </span><input type="text" id="p1-gauss1d-quiz-x${i}" placeholder="${window.sigFigsNote(xs[i], GAUSS_SIG_FIGS)}"></div>`
+          }
+          inputsHtml += `<div class="quiz-input-row"><span>Approximate integral I &asymp; </span><input type="text" id="p1-gauss1d-quiz-I" placeholder="${window.sigFigsNote(answer, GAUSS_SIG_FIGS)}"></div>`
+
+          document.getElementById("p1-gauss1d-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-gauss1d-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-gauss1d-quiz-inputs").innerHTML = inputsHtml
+          document.getElementById("p1-gauss1d-quizCheckBtn").disabled = false
+        }
+
+        window.p1Gauss1dCheckQuiz = function () {
+          const quizFeedback = document.getElementById("p1-gauss1d-quiz-feedback")
+          const quizHint = document.getElementById("p1-gauss1d-quiz-hint")
+          let allCorrect = true
+
+          for (let i = 0; i < n; i++) {
+            const tEl = document.getElementById(`p1-gauss1d-quiz-t${i}`)
+            const wEl = document.getElementById(`p1-gauss1d-quiz-w${i}`)
+            const xEl = document.getElementById(`p1-gauss1d-quiz-x${i}`)
+            const tOk = gaussCloseEnough(parseFloat(tEl.value), ts[i])
+            const wOk = gaussCloseEnough(parseFloat(wEl.value), ws[i])
+            const xOk = gaussCloseEnough(parseFloat(xEl.value), xs[i])
+            tEl.classList.remove(tOk ? "incorrect" : "correct"); tEl.classList.add(tOk ? "correct" : "incorrect")
+            wEl.classList.remove(wOk ? "incorrect" : "correct"); wEl.classList.add(wOk ? "correct" : "incorrect")
+            xEl.classList.remove(xOk ? "incorrect" : "correct"); xEl.classList.add(xOk ? "correct" : "incorrect")
+            if (!tOk || !wOk || !xOk) allCorrect = false
+          }
+          const IEl = document.getElementById("p1-gauss1d-quiz-I")
+          const IOk = gaussCloseEnough(parseFloat(IEl.value), answer)
+          IEl.classList.remove(IOk ? "incorrect" : "correct"); IEl.classList.add(IOk ? "correct" : "incorrect")
+          if (!IOk) allCorrect = false
+
+          if (allCorrect) {
+            quizFeedback.textContent = "Correct!"
+            quizFeedback.className = "correct"; quizHint.classList.add("hidden")
+            nScore += nAns
+          } else {
+            quizFeedback.textContent = "Some entries are incorrect."
+            quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
+            let hint = `<strong>Hint:</strong> Map &xi; &rarr; x with x = ${fmtNum(halfLength)}&middot;t + ${fmtNum(mid)} (half-length &times; t + midpoint).<br>`
+            for (let i = 0; i < n; i++) {
+              hint += `t<sub>${i + 1}</sub> = ${fmtNum(ts[i])}, w<sub>${i + 1}</sub> = ${fmtNum(ws[i])}, x<sub>${i + 1}</sub> = ${fmtNum(xs[i])}, f(x<sub>${i + 1}</sub>) = ${fmtNum(fs[i])}.<br>`
+            }
+            const sumStr = ws.map((w, i) => `(${fmtNum(w)})(${fmtNum(fs[i])})`).join(" + ")
+            hint += `I &asymp; ${fmtNum(halfLength)}&middot;[${sumStr}] = ${fmtNum(answer)}.<br>Correct answer: ${fmtNum(answer)} (accept within ${GAUSS_SIG_FIGS} sig figs)`
+            quizHint.innerHTML = hint
+            quizHint.classList.remove("hidden")
+          }
+
+          document.getElementById("p1-gauss1d-quizCheckBtn").disabled = true
+          nScore = window.clampScore(nScore, nProblems)
+          document.getElementById("p1-gauss1d-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          tabScores.gauss1d = window.clampScore(nScore, tabMaxes.gauss1d); updateTotalScore()
+
+          if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        p1Gauss1dGenerate()
+      })();
+
+      // ═══════════════════════════════════════════
+      //  (d) 2D GAUSS INTEGRATION
+      //  (nx=1,ny=2), (nx=2,ny=1), or (nx=2,ny=2), assigned randomly
+      //  nProblems = 4 is this tab's max score; nAns = 2 points are added
+      //  per fully-correct submission, so 2 correct submissions reach the cap.
+      // ═══════════════════════════════════════════
+      (function () {
+        let nx, ny, p, q
+        let hx, midX, hy, midY
+        let tsX, wsX, tsY, wsY, xs, ys, jacobian, answer
+        var nScore = 0, nProblems = 4, nAns = 2
+        const generateBtn = document.getElementById("p1-gauss2d-generateBtn")
+        const CONFIGS = [[1, 2], [2, 1], [2, 2]]
+
+        window.p1Gauss2dGenerate = function () {
+          generateBtn.disabled = true
+          const cfg = randomChoice(CONFIGS)
+          nx = cfg[0]; ny = cfg[1]
+          p = randomNonZeroInt(-5, 5)
+          q = randomNonZeroInt(-5, 5)
+          const f = (x, y) => p * x * x * y + q * x * y * y
+
+          const xA = 0, xB = randomInt(2, 4)
+          const yA = 0, yB = randomInt(1, 3)
+          hx = (xB - xA) / 2; midX = (xB + xA) / 2
+          hy = (yB - yA) / 2; midY = (yB + yA) / 2
+
+          tsX = GAUSS_TABLE[nx].t.slice(); wsX = GAUSS_TABLE[nx].w.slice()
+          tsY = GAUSS_TABLE[ny].t.slice(); wsY = GAUSS_TABLE[ny].w.slice()
+          xs = tsX.map(t => hx * t + midX)
+          ys = tsY.map(t => hy * t + midY)
+          jacobian = hx * hy
+
+          let sum = 0
+          for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) sum += wsX[i] * wsY[j] * f(xs[i], ys[j])
+          answer = jacobian * sum
+
+          const fStr = polyTermsHTML([p, q], ["x<sup>2</sup>y", "xy<sup>2</sup>"])
+
+          document.getElementById("p1-gauss2d-display").innerHTML = `
+            <p>Use an n<sub>x</sub>=${nx}, n<sub>y</sub>=${ny} Gauss rule to evaluate:</p>
+            <p class="math-formula">&int;&int;<sub>A</sub> (${fStr}) dA</p>
+            <p>on A = [${formatInput(xA)}, ${formatInput(xB)}] &times; [${formatInput(yA)}, ${formatInput(yB)}].</p>`
+
+          let inputsHtml = ""
+          for (let i = 0; i < nx; i++) {
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss point t<sub>${i + 1}</sub><sup>x</sup> = </span><input type="text" id="p1-gauss2d-quiz-tx${i}" placeholder="${window.sigFigsNote(tsX[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss weight w<sub>${i + 1}</sub><sup>x</sup> = </span><input type="text" id="p1-gauss2d-quiz-wx${i}" placeholder="${window.sigFigsNote(wsX[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Physical point x<sub>${i + 1}</sub> = </span><input type="text" id="p1-gauss2d-quiz-x${i}" placeholder="${window.sigFigsNote(xs[i], GAUSS_SIG_FIGS)}"></div>`
+          }
+          for (let j = 0; j < ny; j++) {
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss point t<sub>${j + 1}</sub><sup>y</sup> = </span><input type="text" id="p1-gauss2d-quiz-ty${j}" placeholder="${window.sigFigsNote(tsY[j], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss weight w<sub>${j + 1}</sub><sup>y</sup> = </span><input type="text" id="p1-gauss2d-quiz-wy${j}" placeholder="${window.sigFigsNote(wsY[j], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Physical point y<sub>${j + 1}</sub> = </span><input type="text" id="p1-gauss2d-quiz-y${j}" placeholder="${window.sigFigsNote(ys[j], GAUSS_SIG_FIGS)}"></div>`
+          }
+          inputsHtml += `<div class="quiz-input-row"><span>Approximate integral I &asymp; </span><input type="text" id="p1-gauss2d-quiz-I" placeholder="${window.sigFigsNote(answer, GAUSS_SIG_FIGS)}"></div>`
+
+          document.getElementById("p1-gauss2d-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-gauss2d-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-gauss2d-quiz-inputs").innerHTML = inputsHtml
+          document.getElementById("p1-gauss2d-quizCheckBtn").disabled = false
+        }
+
+        window.p1Gauss2dCheckQuiz = function () {
+          const quizFeedback = document.getElementById("p1-gauss2d-quiz-feedback")
+          const quizHint = document.getElementById("p1-gauss2d-quiz-hint")
+          let allCorrect = true
+
+          function check(id, expected) {
+            const el = document.getElementById(id)
+            const ok = gaussCloseEnough(parseFloat(el.value), expected)
+            el.classList.remove(ok ? "incorrect" : "correct"); el.classList.add(ok ? "correct" : "incorrect")
+            if (!ok) allCorrect = false
+          }
+          for (let i = 0; i < nx; i++) {
+            check(`p1-gauss2d-quiz-tx${i}`, tsX[i])
+            check(`p1-gauss2d-quiz-wx${i}`, wsX[i])
+            check(`p1-gauss2d-quiz-x${i}`, xs[i])
+          }
+          for (let j = 0; j < ny; j++) {
+            check(`p1-gauss2d-quiz-ty${j}`, tsY[j])
+            check(`p1-gauss2d-quiz-wy${j}`, wsY[j])
+            check(`p1-gauss2d-quiz-y${j}`, ys[j])
+          }
+          check("p1-gauss2d-quiz-I", answer)
+
+          if (allCorrect) {
+            quizFeedback.textContent = "Correct!"
+            quizFeedback.className = "correct"; quizHint.classList.add("hidden")
+            nScore += nAns
+          } else {
+            quizFeedback.textContent = "Some entries are incorrect."
+            quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
+            let hint = `<strong>Hint:</strong> x = ${fmtNum(hx)}&middot;t<sup>x</sup> + ${fmtNum(midX)}, &nbsp; y = ${fmtNum(hy)}&middot;t<sup>y</sup> + ${fmtNum(midY)}.<br>`
+            for (let i = 0; i < nx; i++) hint += `t<sub>${i + 1}</sub><sup>x</sup> = ${fmtNum(tsX[i])}, w<sub>${i + 1}</sub><sup>x</sup> = ${fmtNum(wsX[i])}, x<sub>${i + 1}</sub> = ${fmtNum(xs[i])}.<br>`
+            for (let j = 0; j < ny; j++) hint += `t<sub>${j + 1}</sub><sup>y</sup> = ${fmtNum(tsY[j])}, w<sub>${j + 1}</sub><sup>y</sup> = ${fmtNum(wsY[j])}, y<sub>${j + 1}</sub> = ${fmtNum(ys[j])}.<br>`
+            hint += `Jacobian = ${fmtNum(hx)}&times;${fmtNum(hy)} = ${fmtNum(jacobian)}.<br>`
+            hint += `I &asymp; J&middot;&sum; w<sub>i</sub><sup>x</sup>w<sub>j</sub><sup>y</sup>f(x<sub>i</sub>,y<sub>j</sub>) = ${fmtNum(answer)}.<br>`
+            hint += `Correct answer: ${fmtNum(answer)} (accept within ${GAUSS_SIG_FIGS} sig figs)`
+            quizHint.innerHTML = hint
+            quizHint.classList.remove("hidden")
+          }
+
+          document.getElementById("p1-gauss2d-quizCheckBtn").disabled = true
+          nScore = window.clampScore(nScore, nProblems)
+          document.getElementById("p1-gauss2d-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          tabScores.gauss2d = window.clampScore(nScore, tabMaxes.gauss2d); updateTotalScore()
+
+          if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        p1Gauss2dGenerate()
+      })();
+
+      })();
+    </script>
+
+    <script>
+      // ═══════════════════════════════════════════
+      //  PROBLEM 2: MATRIX INVERSE
+      //  An 8×8 symmetric integer matrix is generated; the student
+      //  downloads it as a CSV, computes A⁻¹ on their own, and uploads
+      //  their result as a CSV to be checked entrywise to 4 decimal places.
+      // ═══════════════════════════════════════════
+      (function () {
+
+      function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min }
+
+      window.p2SwitchTab = function (name) {
+        document.querySelectorAll('.p2-tab-content').forEach(el => el.classList.remove('active'))
+        document.querySelectorAll('#p2-tab-bar button').forEach(el => el.classList.remove('active'))
+        document.getElementById('p2-tab-' + name).classList.add('active')
+        const idx = { matinv: 0 }[name]
+        document.querySelectorAll('#p2-tab-bar button')[idx].classList.add('active')
+      }
+
+      const tabScores = { matinv: 0 }
+      function updateTotalScore() {
+        const raw = tabScores.matinv
+        const total = window.hwClamp ? window.hwClamp(raw, 0, 4) : Math.max(0, Math.min(4, raw))
+        document.getElementById("p2-total-score").textContent = total.toFixed(1)
+        if (window.reportP2Total) window.reportP2Total(total)
+      }
+      const tabMaxes = { matinv: 4 }
+      window.p2GetTabScores = function () { return Object.assign({}, tabScores) };
+      window.p2SetTabScores = function (scores) {
+        Object.keys(tabScores).forEach(key => {
+          if (scores[key] !== undefined) tabScores[key] = window.clampScore(scores[key], tabMaxes[key])
+        })
+        updateTotalScore()
+      };
+
+      const N = 8
+      const MAX_PTS = 4
+      let A = null       // the generated 8×8 symmetric matrix
+      let Ainv = null    // its true inverse, computed to full precision
+      let matinvScore = 0
+
+      function fmt4(v) {
+        const r = Math.round(v * 10000) / 10000
+        return Object.is(r, -0) ? "0.0000" : r.toFixed(4)
+      }
+
+      // Generic n×n matrix inverse via Gauss-Jordan elimination with
+      // partial pivoting. Returns null if the matrix is (numerically)
+      // singular.
+      function invertMatrix(mat) {
+        const n = mat.length
+        const M = mat.map((row, i) => row.concat(Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))))
+        for (let col = 0; col < n; col++) {
+          let pivotRow = col
+          let maxAbs = Math.abs(M[col][col])
+          for (let r = col + 1; r < n; r++) {
+            if (Math.abs(M[r][col]) > maxAbs) { maxAbs = Math.abs(M[r][col]); pivotRow = r }
+          }
+          if (maxAbs < 1e-10) return null
+          if (pivotRow !== col) { const tmp = M[col]; M[col] = M[pivotRow]; M[pivotRow] = tmp }
+          const pivot = M[col][col]
+          for (let j = 0; j < 2 * n; j++) M[col][j] /= pivot
+          for (let r = 0; r < n; r++) {
+            if (r === col) continue
+            const factor = M[r][col]
+            if (factor === 0) continue
+            for (let j = 0; j < 2 * n; j++) M[r][j] -= factor * M[col][j]
+          }
+        }
+        return M.map(row => row.slice(n))
+      }
+
+      function renderMatrix(mat) {
+        let html = `<table class="matrix-table"><tbody>`
+        mat.forEach(row => {
+          html += `<tr>${row.map(v => `<td>${v}</td>`).join("")}</tr>`
+        })
+        html += `</tbody></table>`
+        return html
+      }
+
+      function drawMatrix() {
+        document.getElementById("p2-matinv-display").innerHTML = `
+          <p style="margin-top:0;">Matrix A (8&times;8, symmetric):</p>
+          ${renderMatrix(A)}`
+      }
+
+      // Generates a new random 8×8 symmetric matrix with integer entries
+      // in [-10, 10], regenerating if it happens to come out singular
+      // (astronomically unlikely for random integer entries, but checked
+      // for safety). Also resets this problem's UI back to its initial
+      // state: "Choose file" and "New Matrix" both disabled again until
+      // the student re-earns them (download, then upload+check).
+      let hasDownloaded = false
+      let hasChecked = false
+
+      function setControlsForFreshMatrix() {
+        hasDownloaded = false
+        hasChecked = false
+        const newBtn = document.getElementById("p2-matinv-newBtn")
+        const uploadEl = document.getElementById("p2-matinv-upload")
+        if (newBtn) newBtn.disabled = true
+        if (uploadEl) { uploadEl.disabled = true; uploadEl.value = "" }
+      }
+
+      window.p2MatinvRandomize = function () {
+        let tries = 0
+        while (true) {
+          tries++
+          const M = Array.from({ length: N }, () => new Array(N).fill(0))
+          for (let i = 0; i < N; i++) {
+            for (let j = i; j < N; j++) {
+              const v = randomInt(-10, 10)
+              M[i][j] = v; M[j][i] = v
+            }
+          }
+          const inv = invertMatrix(M)
+          if (inv || tries > 20) { A = M; Ainv = inv; break }
+        }
+        matinvScore = 0
+        tabScores.matinv = 0
+        updateTotalScore()
+        document.getElementById("p2-matinv-error").style.display = "none"
+        document.getElementById("p2-matinv-quiz-feedback").innerHTML = ""
+        document.getElementById("p2-matinv-quiz-hint").classList.add("hidden")
+        document.getElementById("p2-matinv-score-display").textContent = ""
+        setControlsForFreshMatrix()
+        drawMatrix()
+      }
+
+      // Generates a brand-new random matrix and resets the Problem 2
+      // score to 0 (used by the "New Matrix" button).
+      window.p2NewMatrix = function () {
+        p2MatinvRandomize()
+      }
+
+      window.p2MatinvDownload = function () {
+        if (!A) return
+        const csv = A.map(row => row.join(",")).join("\n") + "\n"
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "matrix_A.csv"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+
+        hasDownloaded = true
+        const uploadEl = document.getElementById("p2-matinv-upload")
+        if (uploadEl) uploadEl.disabled = false
+      }
+
+      // Parses simple numeric CSV text (comma-separated, one row per
+      // line) into a 2D array of numbers. Blank lines are ignored.
+      function parseCsv(text) {
+        const rows = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0)
+        return rows.map(line => line.split(",").map(s => Number(s.trim())))
+      }
+
+      // Runs the upload → grade pipeline against whatever file is
+      // currently selected in the "Choose file" input. Triggered
+      // automatically by that input's onchange (there's no separate
+      // "Check Answer" button); regardless of pass or fail, a completed
+      // check unlocks "New Matrix".
+      function runCheck() {
+        const errEl = document.getElementById("p2-matinv-error")
+        const feedbackEl = document.getElementById("p2-matinv-quiz-feedback")
+        const hintEl = document.getElementById("p2-matinv-quiz-hint")
+        const scoreEl = document.getElementById("p2-matinv-score-display")
+        errEl.style.display = "none"; errEl.textContent = ""
+
+        if (!Ainv) {
+          errEl.textContent = "This matrix turned out to be singular \u2014 click \u201cNew Matrix\u201d and try again."
+          errEl.style.display = "block"
+          return
+        }
+
+        const fileInput = document.getElementById("p2-matinv-upload")
+        const file = fileInput.files && fileInput.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = function (evt) {
+          let parsed
+          try {
+            parsed = parseCsv(String(evt.target.result))
+          } catch (e) {
+            errEl.textContent = "Could not read that file as CSV."
+            errEl.style.display = "block"
+            return
+          }
+
+          if (parsed.length !== N || parsed.some(row => row.length !== N || row.some(v => Number.isNaN(v)))) {
+            errEl.textContent = `Your file should contain an ${N}\u00d7${N} grid of numbers (${N} rows, ${N} comma-separated values per row).`
+            errEl.style.display = "block"
+            return
+          }
+
+          const TOL = 5e-5 // accurate to 4 decimal places
+          let numCorrect = 0
+          for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+              if (Math.abs(parsed[i][j] - Ainv[i][j]) < TOL) numCorrect++
+            }
+          }
+          const allCorrect = numCorrect === N * N
+
+          if (allCorrect) {
+            feedbackEl.textContent = "Correct! Your uploaded inverse matches A\u207b\u00b9 to 4 decimal places."
+            feedbackEl.className = "quiz-feedback correct"
+            hintEl.classList.add("hidden")
+            matinvScore = MAX_PTS
+          } else {
+            feedbackEl.textContent = `Not quite \u2014 ${numCorrect} of ${N * N} entries matched.`
+            feedbackEl.className = "quiz-feedback incorrect"
+            hintEl.innerHTML = `<strong>Hint:</strong> The correct inverse A<sup>&minus;1</sup> (rounded to 4 decimal places) is:<br>
+              <div style="overflow-x:auto;">${renderMatrix(Ainv.map(row => row.map(fmt4)))}</div>`
+            hintEl.classList.remove("hidden")
+            matinvScore = Math.max(0, matinvScore - MAX_PTS / 2)
+          }
+
+          // The score can never exceed MAX_PTS (4): a correct check sets
+          // it to exactly MAX_PTS (never higher), and every assignment is
+          // clamped again here and wherever it's read elsewhere.
+          matinvScore = window.clampScore(matinvScore, MAX_PTS)
+          scoreEl.textContent = `Score: ${matinvScore.toFixed(1)} / ${MAX_PTS}`
+          tabScores.matinv = window.clampScore(matinvScore, tabMaxes.matinv)
+          updateTotalScore()
+
+          hasChecked = true
+          const newBtn = document.getElementById("p2-matinv-newBtn")
+          // "New Matrix" unlocks after a check — unless that check already
+          // earned the full MAX_PTS, in which case it stays locked (once
+          // this problem is fully correct, there's no need to reshuffle it).
+          if (newBtn) newBtn.disabled = (matinvScore >= MAX_PTS)
+        }
+        reader.onerror = function () {
+          errEl.textContent = "There was a problem reading that file."
+          errEl.style.display = "block"
+        }
+        reader.readAsText(file)
+      }
+
+      // Bound to the file input's onchange; a file being chosen is what
+      // triggers grading now that the separate "Check Answer" button is
+      // gone.
+      window.p2MatinvFileChosen = function () {
+        runCheck()
+      }
+
+      // ── state persistence for the "coded score" resume system ──
+      // Returns the current matrix (flattened) plus the download/check
+      // progress flags, so a submission code generated mid-Problem-2 can
+      // restore the *exact* matrix the student already downloaded rather
+      // than handing them a fresh random one on resume.
+      window.p2GetMatrixState = function () {
+        if (!A) return null
+        return { downloaded: hasDownloaded, checked: hasChecked, values: A.flat() }
+      }
+      window.p2SetMatrixState = function (state) {
+        if (!state || !Array.isArray(state.values) || state.values.length !== N * N) return
+        const vals = state.values.map(Number)
+        if (vals.some(v => Number.isNaN(v))) return
+        A = Array.from({ length: N }, (_, i) => vals.slice(i * N, i * N + N))
+        Ainv = invertMatrix(A)
+        hasDownloaded = !!state.downloaded
+        hasChecked = !!state.checked
+        drawMatrix()
+        const newBtn = document.getElementById("p2-matinv-newBtn")
+        const uploadEl = document.getElementById("p2-matinv-upload")
+        // Same rule as a live check: "New Matrix" unlocks once checked,
+        // unless the restored score already reads a full MAX_PTS, in
+        // which case it stays locked.
+        if (newBtn) newBtn.disabled = !hasChecked || (tabScores.matinv >= MAX_PTS)
+        if (uploadEl) { uploadEl.disabled = !hasDownloaded; uploadEl.value = "" }
+        document.getElementById("p2-matinv-error").style.display = "none"
+        document.getElementById("p2-matinv-quiz-feedback").innerHTML = ""
+        document.getElementById("p2-matinv-quiz-hint").classList.add("hidden")
+      }
+
+      // Initial random matrix on page load.
+      p2MatinvRandomize()
+
+      })();
+    </script>
+
+    <script>
+      // ═══════════════════════════════════════════
+      //  PROBLEM 3: 2D FRAME FEM
+      //  One free joint, 2-3 rigidly-fixed-support frame (beam-column)
+      //  members converging on it. Each member has axial stiffness (EA)
+      //  and bending stiffness (EI); the free joint has 3 dof (ux, uy, θ).
+      //  Steps: (1) lengths & direction cosines [2 pts], (2) local 6×6
+      //  element stiffness matrices [2 pts/member], (3) global 6×6
+      //  element stiffness matrices [2 pts/member], (4) the entire
+      //  unreduced global stiffness matrix for the whole structure
+      //  [2 pts, size 3×(members+1)], (5) the reduced 3×3 stiffness
+      //  matrix at the free joint [2 pts] (Steps 2-5 all entered
+      //  entrywise, accurate to 6 decimal places, each checked as its
+      //  own matrix), (6) reduced load vector [1 pt], (7) solve for
+      //  displacements/rotation [2 pts], (8) member end forces in global
+      //  coordinates via {F}=[K_global]{d} [2 pts], (9) member end
+      //  forces in local coordinates via {F_local}=[T]{F_global} [2 pts].
+      //  Steps 2-5 allow unlimited re-checks (their Check buttons are
+      //  never disabled) plus their own Export/Import; Steps 1, 6, 7, 8,
+      //  9 use the single generic Check-once-then-unlock-next flow
+      //  shared with the rest of the homework.
+      // ═══════════════════════════════════════════
+      (function () {
+
+      function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min }
+      function randomNonZeroInt(min, max) { let v; do { v = randomInt(min, max) } while (v === 0); return v }
+      function randomChoice(arr) { return arr[randomInt(0, arr.length - 1)] }
+
+      window.p3SwitchTab = function (name) {
+        document.querySelectorAll('.p3-tab-content').forEach(el => el.classList.remove('active'))
+        document.querySelectorAll('#p3-tab-bar button').forEach(el => el.classList.remove('active'))
+        document.getElementById('p3-tab-' + name).classList.add('active')
+        const idx = { frame: 0 }[name]
+        document.querySelectorAll('#p3-tab-bar button')[idx].classList.add('active')
+      }
+
+      const tabScores = { frame: 0 }
+      function updateTotalScore() {
+        const raw = tabScores.frame
+        const total = window.hwClamp ? window.hwClamp(raw, 0, 25) : Math.max(0, Math.min(25, raw))
+        document.getElementById("p3-total-score").textContent = total.toFixed(1)
+        if (window.reportP3Total) window.reportP3Total(total)
+      }
+      const tabMaxes = { frame: 25 }
+      window.p3GetTabScores = function () { return Object.assign({}, tabScores) };
+      window.p3SetTabScores = function (scores) {
+        Object.keys(tabScores).forEach(key => {
+          if (scores[key] !== undefined) tabScores[key] = window.clampScore(scores[key], tabMaxes[key])
+        })
+        updateTotalScore()
+      };
+
+      // ── numeric helpers ──
+      function fmt(v) {
+        if (v === null || v === undefined || Number.isNaN(v)) return "\u2014"
+        const r = Math.round(v * 10000) / 10000
+        return Object.is(r, -0) ? "0" : String(r)
+      }
+      // Precision convention for Problem 3: Steps 1-6 are graded to 6
+      // significant figures, Steps 7-9 to 4 significant figures. Unlike
+      // the shared window.sigFigsNote helper (used elsewhere in the
+      // homework), these note functions always display the guideline —
+      // every input shows its required precision, even when the
+      // expected answer happens to be a whole number.
+      const SIG_FIGS_HI = 6 // Steps 1-6
+      const SIG_FIGS_LO = 4 // Steps 7-9
+      function sigFigsNoteHi() { return `${SIG_FIGS_HI} sig figs` }
+      function sigFigsNoteLo() { return `${SIG_FIGS_LO} sig figs` }
+      function closeEnoughHi(a, b) { return window.closeEnoughSigFigs(a, b, SIG_FIGS_HI) }
+      function closeEnoughLo(a, b) { return window.closeEnoughSigFigs(a, b, SIG_FIGS_LO) }
+      function fmt6(v) {
+        if (v === null || v === undefined || Number.isNaN(v)) return "\u2014"
+        const r = Math.round(v * 1e6) / 1e6
+        return Object.is(r, -0) ? "0.000000" : r.toFixed(6)
+      }
+      // Renders a small matrix (array of arrays) using the same
+      // "matrix-table" look used for the read-only diagram matrices.
+      function renderStiffnessMatrixHtml(mat) {
+        let html = `<table class="matrix-table"><tbody>`
+        mat.forEach(row => { html += `<tr>${row.map(v => `<td>${fmt6(v)}</td>`).join("")}</tr>` })
+        html += `</tbody></table>`
+        return html
+      }
+      // Full 6×6 local element stiffness matrix (both nodes' 3 dof each),
+      // DOF order [u1, v1, θ1, u2, v2, θ2] where node 1 is the fixed
+      // support end and node 2 is the free-joint end.
+      function localStiffnessMatrix6(e) {
+        const { ka, k12, k6, k4, k2 } = e
+        return [
+          [ ka,    0,    0,  -ka,    0,    0],
+          [  0,  k12,   k6,    0, -k12,   k6],
+          [  0,   k6,   k4,    0,  -k6,   k2],
+          [-ka,    0,    0,   ka,    0,    0],
+          [  0, -k12,  -k6,    0,  k12,  -k6],
+          [  0,   k6,   k2,    0,  -k6,   k4],
+        ]
+      }
+      // 2D frame element rotation (transformation) matrix, mapping global
+      // dof [U1,V1,θ1,U2,V2,θ2] to local dof [u1,v1,θ1,u2,v2,θ2]: u = c·U
+      // + s·V, v = −s·U + c·V (θ unchanged), applied identically at both
+      // nodes. c, s are the member's direction cosines from Step 1.
+      function transformationMatrix6(c, s) {
+        return [
+          [ c,  s, 0, 0, 0, 0],
+          [-s,  c, 0, 0, 0, 0],
+          [ 0,  0, 1, 0, 0, 0],
+          [ 0,  0, 0, c, s, 0],
+          [ 0,  0, 0, -s, c, 0],
+          [ 0,  0, 0, 0, 0, 1],
+        ]
+      }
+      function transpose6(A) {
+        const T = []
+        for (let i = 0; i < 6; i++) { T.push([]); for (let j = 0; j < 6; j++) T[i][j] = A[j][i] }
+        return T
+      }
+      function matMul6(A, B) {
+        const C = []
+        for (let i = 0; i < 6; i++) {
+          C.push([])
+          for (let j = 0; j < 6; j++) {
+            let sum = 0
+            for (let k = 0; k < 6; k++) sum += A[i][k] * B[k][j]
+            C[i].push(sum)
+          }
+        }
+        return C
+      }
+      function matVec6(A, v) {
+        const out = []
+        for (let i = 0; i < 6; i++) {
+          let sum = 0
+          for (let k = 0; k < 6; k++) sum += A[i][k] * v[k]
+          out.push(sum)
+        }
+        return out
+      }
+      // A member's global end-force vector [Fx1,Fy1,M1,Fx2,Fy2,M2] (Step
+      // 8): {F} = [K_global]{d}, where {d} is the member's global nodal
+      // displacement vector [U1,V1,θ1,U2,V2,θ2]. Node 1 (the fixed
+      // support) has zero displacement; node 2 (the free joint) has the
+      // solved (ux, uy, θ) from Step 7.
+      function globalMemberForces(e, res) {
+        const Kg = globalStiffnessMatrix6(e)
+        const d = [0, 0, 0, res.ux, res.uy, res.th]
+        return matVec6(Kg, d)
+      }
+      // A member's local end-force vector [N1,V1,M1,N2,V2,M2] (Step 9):
+      // {F_local} = [T]{F_global}, using the same transformation matrix
+      // from Step 3 to rotate the global end-force vector from Step 8
+      // into the member's local axial/transverse/rotational directions.
+      function localMemberForces(e, res) {
+        const T = transformationMatrix6(e.c, e.s)
+        return matVec6(T, globalMemberForces(e, res))
+      }
+      // Full 6×6 element stiffness matrix in GLOBAL coordinates:
+      // [K_global] = [T]^T [k_local] [T], DOF order [U1,V1,θ1,U2,V2,θ2].
+      function globalStiffnessMatrix6(e) {
+        const T = transformationMatrix6(e.c, e.s)
+        return matMul6(matMul6(transpose6(T), localStiffnessMatrix6(e)), T)
+      }
+      // The reduced 3×3 global stiffness matrix at the free joint
+      // (Step 5), DOF order [ux, uy, θ] — symmetric, built from the
+      // summed Kxx/Kxy/Kxr/Kyy/Kyr/Krr already computed by solveFrame.
+      function assembledMatrix(res) {
+        return [
+          [res.Kxx, res.Kxy, res.Kxr],
+          [res.Kxy, res.Kyy, res.Kyr],
+          [res.Kxr, res.Kyr, res.Krr],
+        ]
+      }
+      // DOF labels for the entire (unreduced) global system, node by
+      // node: [U,V,θ] for each fixed support S1..S_M, then the free
+      // joint F — used by Step 4's full stiffness matrix.
+      function globalSystemDofLabels(numMembers) {
+        const labels = []
+        for (let n = 0; n < numMembers; n++) {
+          labels.push(`U<sub>S${n + 1}</sub>`, `V<sub>S${n + 1}</sub>`, `&theta;<sub>S${n + 1}</sub>`)
+        }
+        labels.push("U<sub>F</sub>", "V<sub>F</sub>", "&theta;<sub>F</sub>")
+        return labels
+      }
+      // The entire, unreduced global stiffness matrix for the whole
+      // structure (Step 4): every member's 6×6 global matrix (its
+      // fixed-support node's 3 dof, then the shared free joint's 3 dof)
+      // is added into the corresponding rows/columns of the full
+      // system — direct stiffness assembly, before any boundary
+      // conditions are applied. Size is 3×(numMembers + 1): 3 dof for
+      // each support plus 3 for the shared free joint (always the last
+      // block).
+      function fullGlobalStiffnessMatrix(res, numMembers) {
+        const totalDof = 3 * (numMembers + 1)
+        const K = Array.from({ length: totalDof }, () => new Array(totalDof).fill(0))
+        const freeBase = numMembers * 3
+        res.els.forEach((e, i) => {
+          const Kg = globalStiffnessMatrix6(e)
+          const supportBase = i * 3
+          const map = [supportBase, supportBase + 1, supportBase + 2, freeBase, freeBase + 1, freeBase + 2]
+          for (let r = 0; r < 6; r++) {
+            for (let c = 0; c < 6; c++) {
+              K[map[r]][map[c]] += Kg[r][c]
+            }
+          }
+        })
+        return K
+      }
+
+      let M = 2
+      let params = null, result = null
+      let stepScores = { len: 0, stiff: 0, globalStiff: 0, fullK: 0, assemble: 0, loadVec: 0, solve: 0, forces: 0, localForces: 0 }
+      // Steps 2 and 3 (local / global element stiffness matrices) are
+      // graded per member instead of once for the whole step: each
+      // member is worth 2 points, checked and re-checked independently,
+      // and stepScores.stiff / stepScores.globalStiff are always the sum
+      // of these arrays.
+      let stiffMemberScores = []
+      let globalStiffMemberScores = []
+      function updateFrameScore() {
+        const raw = stepScores.len + stepScores.stiff + stepScores.globalStiff + stepScores.fullK + stepScores.assemble + stepScores.loadVec + stepScores.solve + stepScores.forces + stepScores.localForces
+        tabScores.frame = window.clampScore(raw, tabMaxes.frame)
+        updateTotalScore()
+      }
+
+      function gradeStep(stepKey, checks, feedbackEl, hintEl, scoreEl, hintHtml, checkBtnEl, nextBlockId, maxPts, cmpFn) {
+        const cmp = cmpFn || closeEnoughHi
+        let allCorrect = true
+        checks.forEach(ch => {
+          const el = document.getElementById(ch.id)
+          const val = parseFloat(el.value)
+          if (cmp(val, ch.expected)) { el.classList.remove("incorrect"); el.classList.add("correct") }
+          else { el.classList.remove("correct"); el.classList.add("incorrect"); allCorrect = false }
+        })
+        if (allCorrect) {
+          feedbackEl.textContent = "All correct!"; feedbackEl.className = "quiz-feedback correct"
+          hintEl.classList.add("hidden")
+          stepScores[stepKey] = maxPts
+        } else {
+          feedbackEl.textContent = "Some entries are incorrect."; feedbackEl.className = "quiz-feedback incorrect"
+          hintEl.innerHTML = hintHtml; hintEl.classList.remove("hidden")
+          stepScores[stepKey] = Math.max(0, (stepScores[stepKey] || 0) - maxPts / 2)
+        }
+        scoreEl.textContent = `Step score: ${(stepScores[stepKey] || 0).toFixed(1)} / ${maxPts}`
+        // The Check button is never disabled — every step in Problem 3
+        // (matrix steps and plain scalar steps alike) allows unlimited
+        // re-attempts, so a student can fix a wrong entry and re-check.
+        updateFrameScore()
+        if (nextBlockId) document.getElementById(nextBlockId).classList.remove("hidden")
+      }
+
+      window.p3FrameRebuildMemberFields = function () {
+        M = parseInt(document.getElementById("p3-frame-in-numMembers").value, 10)
+        const ro = iGrade === 1 ? "" : "readonly"
+        let html = ""
+        for (let i = 0; i < M; i++) {
+          html += `<div class="fem-row2">
+            <div class="fem-field"><label>Support ${i + 1}, x-coord</label><input type="text" id="p3-frame-in-mx${i}" ${ro}></div>
+            <div class="fem-field"><label>Support ${i + 1}, y-coord</label><input type="text" id="p3-frame-in-my${i}" ${ro}></div>
+            <div class="fem-field"><label>Member ${i + 1}, EA (axial rigidity)</label><input type="text" id="p3-frame-in-EA${i}" ${ro}></div>
+            <div class="fem-field"><label>Member ${i + 1}, EI (bending rigidity)</label><input type="text" id="p3-frame-in-EI${i}" ${ro}></div>
+          </div>`
+        }
+        document.getElementById("p3-frame-member-fields").innerHTML = html
+      }
+
+      window.p3FrameRandomize = function () {
+        M = 3
+        document.getElementById("p3-frame-in-numMembers").value = String(M)
+        p3FrameRebuildMemberFields()
+        document.getElementById("p3-frame-in-fx").value = "0"
+        document.getElementById("p3-frame-in-fy").value = "0"
+        const baseThetas = M === 2 ? [200, 340] : [190, 300, 50]
+        for (let i = 0; i < M; i++) {
+          const theta = (baseThetas[i] + randomInt(-15, 15)) * Math.PI / 180
+          const L = randomInt(3, 6)
+          const mx = Math.round(L * Math.cos(theta))
+          const my = Math.round(L * Math.sin(theta))
+          document.getElementById(`p3-frame-in-mx${i}`).value = String(mx)
+          document.getElementById(`p3-frame-in-my${i}`).value = String(my)
+          document.getElementById(`p3-frame-in-EA${i}`).value = String(randomInt(1, 4) * 10)
+          document.getElementById(`p3-frame-in-EI${i}`).value = String(randomInt(1, 4) * 10)
+        }
+        document.getElementById("p3-frame-in-Fx").value = String(randomNonZeroInt(-8, 8))
+        document.getElementById("p3-frame-in-Fy").value = String(randomNonZeroInt(-8, 8))
+        document.getElementById("p3-frame-in-M").value = String(randomNonZeroInt(-5, 5))
+        p3FrameDraw()
+      }
+
+      // Generates a brand-new random frame instance, redraws the diagram,
+      // and resets the Problem 3 score to 0 (used by the "New 2D Frame"
+      // button).
+      window.p3NewFrame = function () {
+        p3FrameRandomize()
+        stepScores = { len: 0, stiff: 0, globalStiff: 0, fullK: 0, assemble: 0, loadVec: 0, solve: 0, forces: 0, localForces: 0 }
+        tabScores.frame = 0
+        updateTotalScore()
+      }
+
+      function readFrameInputs() {
+        M = parseInt(document.getElementById("p3-frame-in-numMembers").value, 10)
+        const fx = Number(document.getElementById("p3-frame-in-fx").value)
+        const fy = Number(document.getElementById("p3-frame-in-fy").value)
+        if (Number.isNaN(fx) || Number.isNaN(fy)) throw new Error("Free joint coordinates must be numeric.")
+        const members = []
+        for (let i = 0; i < M; i++) {
+          const mxEl = document.getElementById(`p3-frame-in-mx${i}`)
+          const myEl = document.getElementById(`p3-frame-in-my${i}`)
+          const EAEl = document.getElementById(`p3-frame-in-EA${i}`)
+          const EIEl = document.getElementById(`p3-frame-in-EI${i}`)
+          if (!mxEl || !myEl || !EAEl || !EIEl) throw new Error("Please fill in all member fields.")
+          const mx = Number(mxEl.value), my = Number(myEl.value), EA = Number(EAEl.value), EI = Number(EIEl.value)
+          if ([mx, my, EA, EI].some(v => Number.isNaN(v))) throw new Error(`Member ${i + 1}: please fill in all fields with numbers.`)
+          if (EA <= 0) throw new Error(`Member ${i + 1}: EA must be a positive number.`)
+          if (EI <= 0) throw new Error(`Member ${i + 1}: EI must be a positive number.`)
+          if (mx === fx && my === fy) throw new Error(`Member ${i + 1}: support cannot be at the same point as the free joint.`)
+          members.push({ mx, my, EA, EI })
+        }
+        const Fx = Number(document.getElementById("p3-frame-in-Fx").value)
+        const Fy = Number(document.getElementById("p3-frame-in-Fy").value)
+        const M0 = Number(document.getElementById("p3-frame-in-M").value)
+        if (Number.isNaN(Fx) || Number.isNaN(Fy) || Number.isNaN(M0)) throw new Error("Applied load/moment must be numeric.")
+        return { fx, fy, members, Fx, Fy, M0 }
+      }
+
+      // ── Problem-data Export / Import (iGrade === 1 only) ──
+      // Saves every editable Problem 3 field into a simple "key,value"
+      // CSV so an instructor can save a specific frame instance and
+      // reload it later (or share it) instead of relying on the random
+      // generator.
+      window.p3FrameExport = function () {
+        const mCount = parseInt(document.getElementById("p3-frame-in-numMembers").value, 10) || M
+        const val = id => { const el = document.getElementById(id); return el ? el.value : "" }
+        const rows = [
+          ["numMembers", val("p3-frame-in-numMembers")],
+          ["fx", val("p3-frame-in-fx")],
+          ["fy", val("p3-frame-in-fy")],
+        ]
+        for (let i = 0; i < mCount; i++) {
+          rows.push([`mx${i}`, val(`p3-frame-in-mx${i}`)])
+          rows.push([`my${i}`, val(`p3-frame-in-my${i}`)])
+          rows.push([`EA${i}`, val(`p3-frame-in-EA${i}`)])
+          rows.push([`EI${i}`, val(`p3-frame-in-EI${i}`)])
+        }
+        rows.push(["Fx", val("p3-frame-in-Fx")])
+        rows.push(["Fy", val("p3-frame-in-Fy")])
+        rows.push(["M", val("p3-frame-in-M")])
+
+        const csv = rows.map(r => r.join(",")).join("\n") + "\n"
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "frame_data.csv"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+
+      // Parses the simple "key,value" CSV produced by p3FrameExport (one
+      // key/value pair per line) into a plain object.
+      function parseKeyValueCsv(text) {
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0)
+        const obj = {}
+        lines.forEach(line => {
+          const idx = line.indexOf(",")
+          if (idx === -1) return
+          obj[line.slice(0, idx).trim()] = line.slice(idx + 1).trim()
+        })
+        return obj
+      }
+
+      // Bound to the hidden import file input's onchange (triggered by the
+      // "Import" button). Populates every field from the uploaded CSV and
+      // immediately redraws.
+      window.p3FrameImportFileChosen = function () {
+        const errEl = document.getElementById("p3-frame-error")
+        const fileInput = document.getElementById("p3-frame-importFile")
+        const file = fileInput.files && fileInput.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = function (evt) {
+          let data
+          try {
+            data = parseKeyValueCsv(String(evt.target.result))
+          } catch (e) {
+            errEl.textContent = "Could not read that file as CSV."
+            errEl.style.display = "block"
+            return
+          }
+
+          if (data.numMembers !== "2" && data.numMembers !== "3") {
+            errEl.textContent = 'Imported file must include a "numMembers" row with value 2 or 3.'
+            errEl.style.display = "block"
+            return
+          }
+          errEl.style.display = "none"
+
+          document.getElementById("p3-frame-in-numMembers").value = data.numMembers
+          p3FrameRebuildMemberFields() // resizes the per-member fields to match, respecting iGrade's editability
+          document.getElementById("p3-frame-in-fx").value = data.fx ?? "0"
+          document.getElementById("p3-frame-in-fy").value = data.fy ?? "0"
+          const mCount = parseInt(data.numMembers, 10)
+          for (let i = 0; i < mCount; i++) {
+            const mxEl = document.getElementById(`p3-frame-in-mx${i}`)
+            const myEl = document.getElementById(`p3-frame-in-my${i}`)
+            const EAEl = document.getElementById(`p3-frame-in-EA${i}`)
+            const EIEl = document.getElementById(`p3-frame-in-EI${i}`)
+            if (mxEl) mxEl.value = data[`mx${i}`] ?? ""
+            if (myEl) myEl.value = data[`my${i}`] ?? ""
+            if (EAEl) EAEl.value = data[`EA${i}`] ?? ""
+            if (EIEl) EIEl.value = data[`EI${i}`] ?? ""
+          }
+          document.getElementById("p3-frame-in-Fx").value = data.Fx ?? "0"
+          document.getElementById("p3-frame-in-Fy").value = data.Fy ?? "0"
+          document.getElementById("p3-frame-in-M").value = data.M ?? "0"
+
+          fileInput.value = "" // allow re-importing the same filename again later
+          p3FrameDraw() // apply the imported data right away
+        }
+        reader.onerror = function () {
+          errEl.textContent = "There was a problem reading that file."
+          errEl.style.display = "block"
+        }
+        reader.readAsText(file)
+      }
+
+      // 3×3 determinant.
+      function det3(m) {
+        return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
+               m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+               m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+      }
+
+      function solveFrame(p) {
+        const els = p.members.map((m, idx) => {
+          const dx = p.fx - m.mx, dy = p.fy - m.my
+          const L = Math.sqrt(dx * dx + dy * dy)
+          const c = dx / L, s = dy / L
+          const ka = m.EA / L
+          const k12 = 12 * m.EI / (L * L * L)
+          const k6 = 6 * m.EI / (L * L)
+          const k4 = 4 * m.EI / L
+          const k2 = 2 * m.EI / L
+          return { idx, mx: m.mx, my: m.my, EA: m.EA, EI: m.EI, L, c, s, ka, k12, k6, k4, k2 }
+        })
+        let Kxx = 0, Kxy = 0, Kxr = 0, Kyy = 0, Kyr = 0, Krr = 0
+        els.forEach(e => {
+          Kxx += e.ka * e.c * e.c + e.k12 * e.s * e.s
+          Kxy += (e.ka - e.k12) * e.c * e.s
+          Kxr += e.k6 * e.s
+          Kyy += e.ka * e.s * e.s + e.k12 * e.c * e.c
+          Kyr += -e.k6 * e.c
+          Krr += e.k4
+        })
+        const K = [[Kxx, Kxy, Kxr], [Kxy, Kyy, Kyr], [Kxr, Kyr, Krr]]
+        const F = [p.Fx, p.Fy, p.M0]
+        const det = det3(K)
+        if (Math.abs(det) < 1e-9) throw new Error("This frame is unstable (its members can't resist load/rotation in every direction). Click \u201cNew 2D Frame\u201d, or adjust the geometry and re-import/redraw, and try again.")
+        function detWithCol(col, vec) {
+          const m = K.map(row => row.slice())
+          for (let i = 0; i < 3; i++) m[i][col] = vec[i]
+          return det3(m)
+        }
+        const ux = detWithCol(0, F) / det
+        const uy = detWithCol(1, F) / det
+        const th = detWithCol(2, F) / det
+        els.forEach(e => {
+          const up = e.c * ux + e.s * uy
+          const vp = -e.s * ux + e.c * uy
+          e.up = up; e.vp = vp
+          e.N = e.ka * up
+          e.V = e.k12 * vp - e.k6 * th
+          e.Mm = -e.k6 * vp + e.k4 * th
+        })
+        return { els, Kxx, Kxy, Kxr, Kyy, Kyr, Krr, ux, uy, th, det }
+      }
+
+      function fixedHatch(cx, cy) {
+        let html = `<line x1="${cx - 12}" y1="${cy + 12}" x2="${cx + 12}" y2="${cy + 12}" stroke="#455a64" stroke-width="2"/>`
+        for (let i = -2; i <= 2; i++) {
+          html += `<line x1="${cx + i * 5}" y1="${cy + 12}" x2="${cx + i * 5 - 4}" y2="${cy + 20}" stroke="#455a64" stroke-width="1.5"/>`
+        }
+        return html
+      }
+      function arrowSVG(x1, y1, x2, y2) {
+        const angle = Math.atan2(y2 - y1, x2 - x1)
+        const hlen = 8
+        const p1x = x2 - hlen * Math.cos(angle - Math.PI / 6), p1y = y2 - hlen * Math.sin(angle - Math.PI / 6)
+        const p2x = x2 - hlen * Math.cos(angle + Math.PI / 6), p2y = y2 - hlen * Math.sin(angle + Math.PI / 6)
+        return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#e67e22" stroke-width="3"/>
+          <polygon points="${x2},${y2} ${p1x},${p1y} ${p2x},${p2y}" fill="#e67e22"/>`
+      }
+      // Curved arrow (illustrative only) showing the applied moment at the
+      // free joint; sweep direction just distinguishes the sign of M.
+      function momentArrowSVG(cx, cy, M0) {
+        if (!M0) return ""
+        const r = 22
+        const sweep = M0 >= 0 ? 1 : 0
+        const startAng = -30 * Math.PI / 180
+        const endAng = 220 * Math.PI / 180
+        const sx = cx + r * Math.cos(startAng), sy = cy + r * Math.sin(startAng)
+        const ex = cx + r * Math.cos(endAng), ey = cy + r * Math.sin(endAng)
+        const tangent = endAng + (sweep ? -Math.PI / 2 : Math.PI / 2)
+        const hlen = 7
+        const p1x = ex - hlen * Math.cos(tangent - Math.PI / 6), p1y = ey - hlen * Math.sin(tangent - Math.PI / 6)
+        const p2x = ex - hlen * Math.cos(tangent + Math.PI / 6), p2y = ey - hlen * Math.sin(tangent + Math.PI / 6)
+        return `<path d="M ${sx} ${sy} A ${r} ${r} 0 0 ${sweep} ${ex} ${ey}" fill="none" stroke="#8e44ad" stroke-width="3"/>
+          <polygon points="${ex},${ey} ${p1x},${p1y} ${p2x},${p2y}" fill="#8e44ad"/>`
+      }
+
+      function renderDiagram(p) {
+        const pts = [[p.fx, p.fy], ...p.members.map(m => [m.mx, m.my])]
+        const xs = pts.map(pt => pt[0]), ys = pts.map(pt => pt[1])
+        const xMin = Math.min(...xs) - 2, xMax = Math.max(...xs) + 2
+        const yMin = Math.min(...ys) - 2, yMax = Math.max(...ys) + 2
+        const W = 560, H = 380
+        const s = Math.min(W / (xMax - xMin), H / (yMax - yMin))
+        const X = x => (x - xMin) * s
+        const Y = y => H - (y - yMin) * s
+
+        let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`
+        p.members.forEach((m, i) => {
+          svg += `<line x1="${X(m.mx)}" y1="${Y(m.my)}" x2="${X(p.fx)}" y2="${Y(p.fy)}" stroke="#34495e" stroke-width="4"/>`
+          const midx = (X(m.mx) + X(p.fx)) / 2, midy = (Y(m.my) + Y(p.fy)) / 2
+          svg += `<text x="${midx}" y="${midy - 6}" font-size="13" fill="#7a4a63" text-anchor="middle">E${i + 1}</text>`
+        })
+        p.members.forEach((m, i) => {
+          const cx = X(m.mx), cy = Y(m.my)
+          svg += `<rect x="${cx - 5}" y="${cy - 5}" width="10" height="10" fill="#455a64"/>`
+          svg += fixedHatch(cx, cy)
+          svg += `<text x="${cx}" y="${cy + 34}" font-size="12" text-anchor="middle" fill="#455a64">Fixed N${i + 1}</text>`
+        })
+        const fxp = X(p.fx), fyp = Y(p.fy)
+        svg += `<circle cx="${fxp}" cy="${fyp}" r="6" fill="#c0392b"/>`
+        svg += `<text x="${fxp + 10}" y="${fyp - 26}" font-size="12" fill="#c0392b">Free joint</text>`
+        const mag = Math.sqrt(p.Fx * p.Fx + p.Fy * p.Fy) || 1
+        const arrowLen = 50
+        const ax = fxp + (p.Fx / mag) * arrowLen
+        const ay = fyp - (p.Fy / mag) * arrowLen
+        svg += arrowSVG(fxp, fyp, ax, ay)
+        svg += momentArrowSVG(fxp, fyp, p.M0)
+        if (p.M0) svg += `<text x="${fxp}" y="${fyp - 34}" font-size="12" fill="#8e44ad" text-anchor="middle">M=${fmt(p.M0)}</text>`
+        svg += `</svg>`
+        document.getElementById("p3-frame-diagram").innerHTML = svg
+      }
+
+      function stepBlockOpen(n, title, intro, hiddenFlag) {
+        return `<div class="fem-step-block ${hiddenFlag ? 'hidden' : ''}" id="p3-frame-step${n}">
+          <h3>Step ${n} &mdash; ${title}</h3>
+          <p class="fem-step-intro">${intro}</p>`
+      }
+      function stepBlockClose(n) {
+        return `<div class="fem-edit-bar">
+            <button id="p3-frame-step${n}-exportBtn" onclick="p3FrameStepExport(${n})">Export</button>
+            <button id="p3-frame-step${n}-importBtn" onclick="document.getElementById('p3-frame-step${n}-importFile').click()">Import</button>
+            <input type="file" id="p3-frame-step${n}-importFile" accept=".csv,text/csv" style="display:none;" onchange="p3FrameStepImportFileChosen(${n})">
+          </div>
+          <button id="p3-frame-step${n}-checkBtn" onclick="p3FrameCheckStep${n}()">Check Step ${n}</button>
+          <div id="p3-frame-step${n}-feedback" class="quiz-feedback"></div>
+          <div id="p3-frame-step${n}-hint" class="quiz-hint hidden"></div>
+          <div id="p3-frame-step${n}-score" class="score-display"></div>
+        </div>`
+      }
+
+      // Tracks the input-field ids belonging to each step (populated by
+      // buildSteps as it generates that step's HTML), so a step's
+      // Export/Import buttons know exactly which fields are "its own"
+      // without needing to query the DOM.
+      let stepFieldIds = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
+
+      // ── Per-step answer Export / Import ──
+      // Lets a student save their typed-in answers for a single step to a
+      // CSV (e.g. to move between devices, or to back up work) and load
+      // them back in later. Import is available to everyone; Export is
+      // shown only when iGrade === 1 (toggled at the end of buildSteps).
+      window.p3FrameStepExport = function (n) {
+        const ids = stepFieldIds[n] || []
+        const rows = ids.map(id => {
+          const el = document.getElementById(id)
+          return [id, el ? el.value : ""]
+        })
+        const csv = rows.map(r => r.join(",")).join("\n") + "\n"
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `frame_step${n}_answers.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+
+      window.p3FrameStepImportFileChosen = function (n) {
+        const fileInput = document.getElementById(`p3-frame-step${n}-importFile`)
+        const file = fileInput.files && fileInput.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = function (evt) {
+          let data
+          try {
+            data = parseKeyValueCsv(String(evt.target.result))
+          } catch (e) {
+            fileInput.value = ""
+            return
+          }
+          ;(stepFieldIds[n] || []).forEach(id => {
+            const el = document.getElementById(id)
+            if (el && data[id] !== undefined) {
+              el.value = data[id]
+              el.classList.remove("correct", "incorrect")
+            }
+          })
+          fileInput.value = ""
+        }
+        reader.readAsText(file)
+      }
+
+      // ── Element-matrix step Export / Import (Steps 2 and 3) ──
+      // Steps 2 (local stiffness matrices) and 3 (global stiffness
+      // matrices) both ask for one 6×6 matrix per member, so they share
+      // this same grid format instead of the generic id,value CSV used
+      // by the other (scalar) steps: an "Element N" header row (6
+      // columns wide, to match the matrix), the 6 matrix rows beneath
+      // it, then a blank separator row before the next element (no
+      // trailing blank row after the last element).
+      function elementMatrixExport(stepN) {
+        const lines = []
+        for (let i = 0; i < M; i++) {
+          lines.push([`Element ${i + 1}`, "", "", "", "", ""].join(","))
+          for (let r = 0; r < 6; r++) {
+            const row = []
+            for (let c = 0; c < 6; c++) {
+              const el = document.getElementById(`p3-frame-s${stepN}-m${r}${c}-${i}`)
+              row.push(el ? el.value : "")
+            }
+            lines.push(row.join(","))
+          }
+          if (i < M - 1) lines.push(["", "", "", "", "", ""].join(","))
+        }
+        const csv = lines.join("\n") + "\n"
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `frame_step${stepN}_stiffness_matrices.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+      window.p3FrameStep2Export = function () { elementMatrixExport(2) }
+      window.p3FrameStep3Export = function () { elementMatrixExport(3) }
+
+      function elementMatrixImportFileChosen(stepN) {
+        const fileInput = document.getElementById(`p3-frame-step${stepN}-importFile`)
+        const errEl = document.getElementById(`p3-frame-step${stepN}-import-error`)
+        const file = fileInput.files && fileInput.files[0]
+        if (!file) return
+        if (errEl) { errEl.style.display = "none"; errEl.innerHTML = "" }
+
+        function showImportError(msg) {
+          if (!errEl) return
+          errEl.innerHTML = msg
+          errEl.style.display = "block"
+        }
+
+        const reader = new FileReader()
+        reader.onerror = function () {
+          showImportError("Could not read that file.")
+          fileInput.value = ""
+        }
+        reader.onload = function (evt) {
+          // Strip a UTF-8 BOM if present (Excel/Sheets often add one).
+          const text = String(evt.target.result).replace(/^\uFEFF/, "")
+          const rawLines = text.split(/\r?\n/).filter(l => l.trim() !== "")
+
+          // Group lines into blocks, one per "Element N" header, collecting
+          // every non-blank, non-header line that follows it as one of
+          // that element's matrix rows (blank separator rows between
+          // elements are dropped by the filter above already).
+          const blocks = []
+          let current = null
+          rawLines.forEach(line => {
+            const fields = line.split(",")
+            const first = (fields[0] || "").trim()
+            const headerMatch = /^Element\s+(\d+)\s*$/i.exec(first)
+            if (headerMatch) {
+              if (current) blocks.push(current)
+              current = { label: first, idx: parseInt(headerMatch[1], 10) - 1, rows: [] }
+              return
+            }
+            if (fields.every(f => f.trim() === "")) return
+            if (current) current.rows.push(fields)
+            else blocks.push({ label: null, idx: -1, rows: [fields] }) // stray data before any header
+          })
+          if (current) blocks.push(current)
+
+          if (blocks.length === 0) {
+            showImportError("Couldn't find any &ldquo;Element N&rdquo; blocks in that file &mdash; nothing was imported.")
+            fileInput.value = ""
+            return
+          }
+
+          // Only genuine problems (missing member, too few rows, a
+          // malformed row) are reported. Once a matrix has imported
+          // correctly there's nothing to tell the student — extra
+          // trailing rows past the first 6 (e.g. a stray leftover line
+          // with no blank separator) are silently ignored rather than
+          // flagged, since the real 6×6 answer still came through fine.
+          const skipped = []
+          let appliedAny = false
+          blocks.forEach(b => {
+            if (!b.label) {
+              skipped.push(`Found ${b.rows.length} row(s) of data before any &ldquo;Element N&rdquo; header &mdash; skipped.`)
+              return
+            }
+            const label = b.label
+            if (b.idx < 0 || b.idx >= M) {
+              skipped.push(`${label}: no matching member on this page (this frame currently has ${M} member${M === 1 ? "" : "s"}) &mdash; skipped.`)
+              return
+            }
+            if (b.rows.length < 6) {
+              skipped.push(`${label}: expected 6 rows of 6 comma-separated values each, found only ${b.rows.length} &mdash; skipped.`)
+              return
+            }
+            const usedRows = b.rows.slice(0, 6)
+            const badRow = usedRows.find(row => row.length !== 6)
+            if (badRow) {
+              skipped.push(`${label}: one of its first 6 rows has ${badRow.length} value${badRow.length === 1 ? "" : "s"} instead of 6 &mdash; skipped.`)
+              return
+            }
+            for (let r = 0; r < 6; r++) {
+              for (let c = 0; c < 6; c++) {
+                const el = document.getElementById(`p3-frame-s${stepN}-m${r}${c}-${b.idx}`)
+                if (el) {
+                  el.value = usedRows[r][c].trim()
+                  el.classList.remove("correct", "incorrect")
+                }
+              }
+            }
+            appliedAny = true
+          })
+
+          if (skipped.length) {
+            showImportError((appliedAny
+              ? "Imported what it could, but some blocks had issues and were left unchanged:<br>"
+              : "Nothing could be imported &mdash; every block had an issue:<br>") + skipped.join("<br>"))
+          }
+          fileInput.value = ""
+        }
+        reader.readAsText(file)
+      }
+      window.p3FrameStep2ImportFileChosen = function () { elementMatrixImportFileChosen(2) }
+      window.p3FrameStep3ImportFileChosen = function () { elementMatrixImportFileChosen(3) }
+
+      function buildSteps(p, res) {
+        stepScores = { len: 0, stiff: 0, globalStiff: 0, fullK: 0, assemble: 0, loadVec: 0, solve: 0, forces: 0, localForces: 0 }
+        stepFieldIds = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
+        stiffMemberScores = new Array(res.els.length).fill(0)
+        globalStiffMemberScores = new Array(res.els.length).fill(0)
+
+        let html = ""
+        html += stepBlockOpen(1, "Member Lengths &amp; Direction Cosines",
+          "For each member, compute the length L and the direction cosines c = &Delta;x/L and s = &Delta;y/L, measured from the fixed support to the free joint.")
+        res.els.forEach((e, i) => {
+          stepFieldIds[1].push(`p3-frame-s1-L${i}`, `p3-frame-s1-c${i}`, `p3-frame-s1-s${i}`)
+          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Support ${i + 1} &rarr; Free joint):</p>
+            <div class="quiz-input-row"><span>L<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-L${i}" placeholder="${sigFigsNoteHi(e.L)}"></div>
+            <div class="quiz-input-row"><span>c<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-c${i}" placeholder="${sigFigsNoteHi(e.c)}"></div>
+            <div class="quiz-input-row"><span>s<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-s${i}" placeholder="${sigFigsNoteHi(e.s)}"></div>`
+        })
+        html += stepBlockClose(1)
+
+        html += stepBlockOpen(2, "Element Stiffness Matrices",
+          "For each member, compute k<sub>a</sub> = EA/L, k<sub>12</sub> = 12EI/L&sup3;, k<sub>6</sub> = 6EI/L&sup2;, k<sub>4</sub> = 4EI/L, and k<sub>2</sub> = 2EI/L, then enter the member's full 6&times;6 " +
+          "local element stiffness matrix. <strong>Degree-of-freedom order:</strong> [u<sub>1</sub>, v<sub>1</sub>, &theta;<sub>1</sub>, u<sub>2</sub>, v<sub>2</sub>, &theta;<sub>2</sub>] &mdash; subscript 1 is the fixed-support end, " +
+          "subscript 2 is the free-joint end, and u, v, &theta; are the member's local axial displacement, transverse displacement, and rotation (the same order labels the rows and columns below). " +
+          "<strong>Enter every entry accurate to 6 decimal places.</strong> Each member's matrix is checked separately and is worth 2 points; incorrect entries are highlighted in red " +
+          "and you can fix them and check again as many times as you like.", true)
+        const dofLabels = ["u<sub>1</sub>", "v<sub>1</sub>", "&theta;<sub>1</sub>", "u<sub>2</sub>", "v<sub>2</sub>", "&theta;<sub>2</sub>"]
+        res.els.forEach((e, i) => {
+          const mat = localStiffnessMatrix6(e)
+          html += `<p style="margin:14px 0 2px;"><b>Member ${i + 1}</b> local stiffness matrix:</p>
+            <div style="overflow-x:auto;"><table class="quiz-matrix-input"><tbody>
+            <tr><td></td>${dofLabels.map(l => `<td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${l}</td>`).join("")}</tr>`
+          for (let r = 0; r < 6; r++) {
+            html += `<tr><td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${dofLabels[r]}</td>`
+            for (let c = 0; c < 6; c++) {
+              const id = `p3-frame-s2-m${r}${c}-${i}`
+              stepFieldIds[2].push(id)
+              html += `<td><input type="text" id="${id}" placeholder="${sigFigsNoteHi(mat[r][c])}"></td>`
+            }
+            html += `</tr>`
+          }
+          html += `</tbody></table></div>
+            <button onclick="p3FrameCheckStep2Member(${i})">Check Member ${i + 1}</button>
+            <div id="p3-frame-s2-feedback${i}" class="quiz-feedback"></div>
+            <div id="p3-frame-s2-hint${i}" class="quiz-hint hidden"></div>
+            <div id="p3-frame-s2-score${i}" class="score-display"></div>`
+        })
+        html += `<div class="fem-edit-bar">
+            <button id="p3-frame-step2-exportBtn" onclick="p3FrameStep2Export()">Export</button>
+            <button id="p3-frame-step2-importBtn" onclick="document.getElementById('p3-frame-step2-importFile').click()">Import</button>
+            <input type="file" id="p3-frame-step2-importFile" accept=".csv,text/csv" style="display:none;" onchange="p3FrameStep2ImportFileChosen()">
+          </div>
+          <div class="fem-error" id="p3-frame-step2-import-error"></div>
+          <div id="p3-frame-step2-totalscore" class="score-display"></div>
+        </div>`
+
+        html += stepBlockOpen(3, "Global Element Stiffness Matrices",
+          "For each member, transform its local stiffness matrix into global coordinates: [K<sub>global</sub>] = [T]<sup>T</sup>[k<sub>local</sub>][T], where [T] rotates each node's (u, v) pair by the member's direction cosines " +
+          "(c, s) from Step 1: u = c&middot;U + s&middot;V, v = &minus;s&middot;U + c&middot;V (&theta; is unchanged at either node). " +
+          "<strong>Degree-of-freedom order:</strong> [U<sub>1</sub>, V<sub>1</sub>, &theta;<sub>1</sub>, U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>] &mdash; subscript 1 is the fixed-support end, subscript 2 is the free-joint end, " +
+          "and U, V, &theta; are now the member's <em>global</em> X-translation, Y-translation, and rotation (same order labels the rows and columns below). " +
+          "<strong>Enter every entry accurate to 6 decimal places.</strong> Each member's matrix is checked separately and is worth 2 points; incorrect entries are highlighted in red " +
+          "and you can fix them and check again as many times as you like.", true)
+        const globalDofLabels = ["U<sub>1</sub>", "V<sub>1</sub>", "&theta;<sub>1</sub>", "U<sub>2</sub>", "V<sub>2</sub>", "&theta;<sub>2</sub>"]
+        res.els.forEach((e, i) => {
+          const mat = globalStiffnessMatrix6(e)
+          html += `<p style="margin:14px 0 2px;"><b>Member ${i + 1}</b> global stiffness matrix:</p>
+            <div style="overflow-x:auto;"><table class="quiz-matrix-input"><tbody>
+            <tr><td></td>${globalDofLabels.map(l => `<td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${l}</td>`).join("")}</tr>`
+          for (let r = 0; r < 6; r++) {
+            html += `<tr><td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${globalDofLabels[r]}</td>`
+            for (let c = 0; c < 6; c++) {
+              const id = `p3-frame-s3-m${r}${c}-${i}`
+              stepFieldIds[3].push(id)
+              html += `<td><input type="text" id="${id}" placeholder="${sigFigsNoteHi(mat[r][c])}"></td>`
+            }
+            html += `</tr>`
+          }
+          html += `</tbody></table></div>
+            <button onclick="p3FrameCheckStep3Member(${i})">Check Member ${i + 1}</button>
+            <div id="p3-frame-s3-feedback${i}" class="quiz-feedback"></div>
+            <div id="p3-frame-s3-hint${i}" class="quiz-hint hidden"></div>
+            <div id="p3-frame-s3-score${i}" class="score-display"></div>`
+        })
+        html += `<div class="fem-edit-bar">
+            <button id="p3-frame-step3-exportBtn" onclick="p3FrameStep3Export()">Export</button>
+            <button id="p3-frame-step3-importBtn" onclick="document.getElementById('p3-frame-step3-importFile').click()">Import</button>
+            <input type="file" id="p3-frame-step3-importFile" accept=".csv,text/csv" style="display:none;" onchange="p3FrameStep3ImportFileChosen()">
+          </div>
+          <div class="fem-error" id="p3-frame-step3-import-error"></div>
+          <div id="p3-frame-step3-totalscore" class="score-display"></div>
+        </div>`
+
+        html += stepBlockOpen(4, "Global Stiffness Matrix",
+          "Assemble the <em>entire</em>, unreduced global stiffness matrix for the whole structure, before any boundary conditions are applied: place each member's 6&times;6 global matrix from Step 3 into the rows/columns of its two nodes " +
+          "(its fixed-support node and the shared free joint), adding contributions where members overlap. <strong>DOF order:</strong> node-by-node, [U, V, &theta;] for each fixed support " +
+          `S<sub>1</sub>&hellip;S<sub>${M}</sub>, followed by the free joint F &mdash; a ${3 * (M + 1)}&times;${3 * (M + 1)} matrix in total (mostly zeros, since supports never connect directly to each other). ` +
+          "<strong>Enter every entry accurate to 6 decimal places.</strong> The correct matrix is worth 2 points; incorrect entries are highlighted in red and you can fix them and check again as many times as you like.", true)
+        const fullDofLabels = globalSystemDofLabels(M)
+        const fullMat = fullGlobalStiffnessMatrix(res, M)
+        html += `<div style="overflow-x:auto;"><table class="quiz-matrix-input"><tbody>
+            <tr><td></td>${fullDofLabels.map(l => `<td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${l}</td>`).join("")}</tr>`
+        for (let r = 0; r < fullDofLabels.length; r++) {
+          html += `<tr><td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${fullDofLabels[r]}</td>`
+          for (let c = 0; c < fullDofLabels.length; c++) {
+            const id = `p3-frame-s4-m${r}_${c}`
+            stepFieldIds[4].push(id)
+            html += `<td><input type="text" id="${id}" placeholder="${sigFigsNoteHi(fullMat[r][c])}"></td>`
+          }
+          html += `</tr>`
+        }
+        html += `</tbody></table></div>
+          <button onclick="p3FrameCheckStep4()">Check Step 4</button>
+          <div id="p3-frame-step4-feedback" class="quiz-feedback"></div>
+          <div id="p3-frame-step4-hint" class="quiz-hint hidden"></div>
+          <div id="p3-frame-step4-score" class="score-display"></div>
+          <div class="fem-edit-bar">
+            <button id="p3-frame-step4-exportBtn" onclick="p3FrameStep4Export()">Export</button>
+            <button id="p3-frame-step4-importBtn" onclick="document.getElementById('p3-frame-step4-importFile').click()">Import</button>
+            <input type="file" id="p3-frame-step4-importFile" accept=".csv,text/csv" style="display:none;" onchange="p3FrameStep4ImportFileChosen()">
+          </div>
+          <div class="fem-error" id="p3-frame-step4-import-error"></div>
+        </div>`
+
+        html += stepBlockOpen(5, "Reduced Stiffness Matrix",
+          "Each member contributes a 3&times;3 block to the stiffness matrix at the free joint's 3 dof (u<sub>x</sub>, u<sub>y</sub>, &theta;) &mdash; exactly the bottom-right 3&times;3 block of that member's global stiffness matrix " +
+          "from Step 3, at its free-joint dof [U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>] (equivalently, the free-joint diagonal block of the full matrix from Step 4, once the fixed-support rows/columns are removed): " +
+          "K<sub>xx</sub> += k<sub>a</sub>c&sup2; + k<sub>12</sub>s&sup2;; K<sub>xy</sub> += (k<sub>a</sub>&minus;k<sub>12</sub>)cs; K<sub>x&theta;</sub> += k<sub>6</sub>s; " +
+          "K<sub>yy</sub> += k<sub>a</sub>s&sup2; + k<sub>12</sub>c&sup2;; K<sub>y&theta;</sub> += &minus;k<sub>6</sub>c; K<sub>&theta;&theta;</sub> += k<sub>4</sub>. " +
+          "Sum the contributions from all members, then enter the reduced 3&times;3 stiffness matrix below, DOF order [u<sub>x</sub>, u<sub>y</sub>, &theta;]. " +
+          "<strong>Enter every entry accurate to 6 decimal places.</strong> The correct matrix is worth 2 points; incorrect entries are highlighted in red and you can fix them and check again as many times as you like.", true)
+        const assembledDofLabels = ["u<sub>x</sub>", "u<sub>y</sub>", "&theta;"]
+        const assembledMat = assembledMatrix(res)
+        html += `<div style="overflow-x:auto;"><table class="quiz-matrix-input"><tbody>
+            <tr><td></td>${assembledDofLabels.map(l => `<td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${l}</td>`).join("")}</tr>`
+        for (let r = 0; r < 3; r++) {
+          html += `<tr><td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${assembledDofLabels[r]}</td>`
+          for (let c = 0; c < 3; c++) {
+            const id = `p3-frame-s5-m${r}${c}`
+            stepFieldIds[5].push(id)
+            html += `<td><input type="text" id="${id}" placeholder="${sigFigsNoteHi(assembledMat[r][c])}"></td>`
+          }
+          html += `</tr>`
+        }
+        html += `</tbody></table></div>
+          <button onclick="p3FrameCheckStep5()">Check Step 5</button>
+          <div id="p3-frame-step5-feedback" class="quiz-feedback"></div>
+          <div id="p3-frame-step5-hint" class="quiz-hint hidden"></div>
+          <div id="p3-frame-step5-score" class="score-display"></div>
+          <div class="fem-edit-bar">
+            <button id="p3-frame-step5-exportBtn" onclick="p3FrameStep5Export()">Export</button>
+            <button id="p3-frame-step5-importBtn" onclick="document.getElementById('p3-frame-step5-importFile').click()">Import</button>
+            <input type="file" id="p3-frame-step5-importFile" accept=".csv,text/csv" style="display:none;" onchange="p3FrameStep5ImportFileChosen()">
+          </div>
+          <div class="fem-error" id="p3-frame-step5-import-error"></div>
+        </div>`
+
+        html += stepBlockOpen(6, "Reduced Load Vector",
+          "After eliminating the fixed-support dof, the reduced load vector holds the applied force/moment components at the free joint's remaining 3 dof (u<sub>x</sub>, u<sub>y</sub>, &theta;), in the same order as the reduced " +
+          "stiffness matrix from Step 5 &mdash; simply the applied load itself, since the free joint is the only place a load was applied.", true)
+        stepFieldIds[6].push("p3-frame-s6-fx", "p3-frame-s6-fy", "p3-frame-s6-m0")
+        html += `<div class="quiz-input-row"><span>F<sub>x</sub> = </span><input type="text" id="p3-frame-s6-fx" placeholder="${sigFigsNoteHi(p.Fx)}"></div>
+          <div class="quiz-input-row"><span>F<sub>y</sub> = </span><input type="text" id="p3-frame-s6-fy" placeholder="${sigFigsNoteHi(p.Fy)}"></div>
+          <div class="quiz-input-row"><span>M = </span><input type="text" id="p3-frame-s6-m0" placeholder="${sigFigsNoteHi(p.M0)}"></div>`
+        html += stepBlockClose(6)
+
+        html += stepBlockOpen(7, "Solve for the Free-Joint Displacements &amp; Rotation",
+          "Solve [K]&middot;[u<sub>x</sub>, u<sub>y</sub>, &theta;]<sup>T</sup> = [F<sub>x</sub>, F<sub>y</sub>, M]<sup>T</sup> for the displacement/rotation components at the free joint.", true)
+        stepFieldIds[7].push("p3-frame-s7-ux", "p3-frame-s7-uy", "p3-frame-s7-th")
+        html += `<div class="quiz-input-row"><span>u<sub>x</sub> = </span><input type="text" id="p3-frame-s7-ux" placeholder="${sigFigsNoteLo(res.ux)}"></div>
+          <div class="quiz-input-row"><span>u<sub>y</sub> = </span><input type="text" id="p3-frame-s7-uy" placeholder="${sigFigsNoteLo(res.uy)}"></div>
+          <div class="quiz-input-row"><span>&theta; = </span><input type="text" id="p3-frame-s7-th" placeholder="${sigFigsNoteLo(res.th)}"></div>`
+        html += stepBlockClose(7)
+
+        html += stepBlockOpen(8, "Member End Forces (Global Coordinates)",
+          "For each member, compute the force vector acting at both ends, expressed in <strong>global</strong> X/Y coordinates, by multiplying the member's nodal displacement vector by its global stiffness matrix from Step 3: " +
+          "{F} = [K<sub>global</sub>]{d}, where {d} = [U<sub>1</sub>, V<sub>1</sub>, &theta;<sub>1</sub>, U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>] &mdash; the fixed-support node (1) has zero displacement, and the free-joint node (2) has " +
+          "(u<sub>x</sub>, u<sub>y</sub>, &theta;) from Step 7. This gives the force/moment components at the support end (F<sub>x1</sub>, F<sub>y1</sub>, M<sub>1</sub>) and at the free-joint end (F<sub>x2</sub>, F<sub>y2</sub>, M<sub>2</sub>), in the global X/Y directions.", true)
+        res.els.forEach((e, i) => {
+          stepFieldIds[8].push(`p3-frame-s8-fx1-${i}`, `p3-frame-s8-fy1-${i}`, `p3-frame-s8-m1-${i}`,
+            `p3-frame-s8-fx2-${i}`, `p3-frame-s8-fy2-${i}`, `p3-frame-s8-m2-${i}`)
+          const F = globalMemberForces(e, res)
+          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Support ${i + 1} &rarr; Free joint):</p>
+            <p style="margin:2px 0;">At the support end (node 1):</p>
+            <div class="quiz-input-row"><span>F<sub>x1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fx1-${i}" placeholder="${sigFigsNoteLo(F[0])}"></div>
+            <div class="quiz-input-row"><span>F<sub>y1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fy1-${i}" placeholder="${sigFigsNoteLo(F[1])}"></div>
+            <div class="quiz-input-row"><span>M<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-m1-${i}" placeholder="${sigFigsNoteLo(F[2])}"></div>
+            <p style="margin:6px 0 2px;">At the free-joint end (node 2):</p>
+            <div class="quiz-input-row"><span>F<sub>x2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fx2-${i}" placeholder="${sigFigsNoteLo(F[3])}"></div>
+            <div class="quiz-input-row"><span>F<sub>y2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fy2-${i}" placeholder="${sigFigsNoteLo(F[4])}"></div>
+            <div class="quiz-input-row"><span>M<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-m2-${i}" placeholder="${sigFigsNoteLo(F[5])}"></div>`
+        })
+        html += stepBlockClose(8)
+
+        html += stepBlockOpen(9, "Member End Forces (Local Coordinates)",
+          "For each member, transform the global end-force vector from Step 8 into <strong>local</strong> (axial/transverse/rotational) coordinates using the member's transformation matrix from Step 3: " +
+          "{F<sub>local</sub>} = [T]{F<sub>global</sub>}. This gives the axial force N, transverse (shear) force V, and moment M at the support end (N<sub>1</sub>, V<sub>1</sub>, M<sub>1</sub>) and at the free-joint end (N<sub>2</sub>, V<sub>2</sub>, M<sub>2</sub>).", true)
+        res.els.forEach((e, i) => {
+          stepFieldIds[9].push(`p3-frame-s9-n1-${i}`, `p3-frame-s9-v1-${i}`, `p3-frame-s9-m1-${i}`,
+            `p3-frame-s9-n2-${i}`, `p3-frame-s9-v2-${i}`, `p3-frame-s9-m2-${i}`)
+          const F = localMemberForces(e, res)
+          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Support ${i + 1} &rarr; Free joint):</p>
+            <p style="margin:2px 0;">At the support end (node 1):</p>
+            <div class="quiz-input-row"><span>N<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-n1-${i}" placeholder="${sigFigsNoteLo(F[0])}"></div>
+            <div class="quiz-input-row"><span>V<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-v1-${i}" placeholder="${sigFigsNoteLo(F[1])}"></div>
+            <div class="quiz-input-row"><span>M<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-m1-${i}" placeholder="${sigFigsNoteLo(F[2])}"></div>
+            <p style="margin:6px 0 2px;">At the free-joint end (node 2):</p>
+            <div class="quiz-input-row"><span>N<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-n2-${i}" placeholder="${sigFigsNoteLo(F[3])}"></div>
+            <div class="quiz-input-row"><span>V<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-v2-${i}" placeholder="${sigFigsNoteLo(F[4])}"></div>
+            <div class="quiz-input-row"><span>M<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-m2-${i}" placeholder="${sigFigsNoteLo(F[5])}"></div>`
+        })
+        html += stepBlockClose(9)
+
+        document.getElementById("p3-frame-steps").innerHTML = html
+
+        // Each step's "Export" button is only for instructor preview
+        // (iGrade === 1); "Import" stays available to everyone.
+        for (let n = 1; n <= 9; n++) {
+          const exportBtn = document.getElementById(`p3-frame-step${n}-exportBtn`)
+          if (exportBtn) exportBtn.classList.toggle("hidden", iGrade !== 1)
+        }
+      }
+
+      window.p3FrameDraw = function () {
+        const errEl = document.getElementById("p3-frame-error")
+        errEl.style.display = "none"; errEl.textContent = ""
+        try {
+          params = readFrameInputs()
+          result = solveFrame(params)
+          renderDiagram(params)
+          buildSteps(params, result)
+        } catch (e) {
+          errEl.textContent = e.message
+          errEl.style.display = "block"
+        }
+      }
+
+      window.p3FrameCheckStep1 = function () {
+        const checks = []
+        result.els.forEach((e, i) => {
+          checks.push({ id: `p3-frame-s1-L${i}`, expected: e.L })
+          checks.push({ id: `p3-frame-s1-c${i}`, expected: e.c })
+          checks.push({ id: `p3-frame-s1-s${i}`, expected: e.s })
+        })
+        const hint = "<strong>Hint:</strong> L = &radic;((&Delta;x)&sup2; + (&Delta;y)&sup2;); c = &Delta;x/L, s = &Delta;y/L, measured from the support to the free joint.<br>" +
+          result.els.map((e, i) => `Member ${i + 1}: L = ${fmt(e.L)}, c = ${fmt(e.c)}, s = ${fmt(e.s)}.`).join("<br>")
+        gradeStep("len", checks, document.getElementById("p3-frame-step1-feedback"), document.getElementById("p3-frame-step1-hint"),
+          document.getElementById("p3-frame-step1-score"), hint, document.getElementById("p3-frame-step1-checkBtn"), "p3-frame-step2", 2)
+      }
+
+      // Steps 2 and 3 are checked per member rather than all at once: each
+      // member's 6×6 matrix is worth 2 points, wrong cells are marked in
+      // red (via the shared "incorrect" input class), correct cells are
+      // marked green, and the button is never disabled — the student can
+      // fix entries and click "Check Member i" again as many times as
+      // they like. stepScores.stiff / stepScores.globalStiff are kept as
+      // the sum of stiffMemberScores / globalStiffMemberScores so they
+      // plug into the existing total-score math unchanged.
+      window.p3FrameCheckStep2Member = function (i) {
+        const e = result.els[i]
+        const mat = localStiffnessMatrix6(e)
+        let allCorrect = true
+        for (let r = 0; r < 6; r++) {
+          for (let c = 0; c < 6; c++) {
+            const el = document.getElementById(`p3-frame-s2-m${r}${c}-${i}`)
+            const val = parseFloat(el.value)
+            if (closeEnoughHi(val, mat[r][c])) { el.classList.remove("incorrect"); el.classList.add("correct") }
+            else { el.classList.remove("correct"); el.classList.add("incorrect"); allCorrect = false }
+          }
+        }
+        const feedbackEl = document.getElementById(`p3-frame-s2-feedback${i}`)
+        const hintEl = document.getElementById(`p3-frame-s2-hint${i}`)
+        const scoreEl = document.getElementById(`p3-frame-s2-score${i}`)
+        if (allCorrect) {
+          feedbackEl.textContent = "Correct!"; feedbackEl.className = "quiz-feedback correct"
+          hintEl.classList.add("hidden")
+          stiffMemberScores[i] = 2
+        } else {
+          feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
+          feedbackEl.className = "quiz-feedback incorrect"
+          hintEl.innerHTML = "<strong>Hint:</strong> DOF order [u<sub>1</sub>, v<sub>1</sub>, &theta;<sub>1</sub>, u<sub>2</sub>, v<sub>2</sub>, &theta;<sub>2</sub>]; " +
+            "k<sub>a</sub> = EA/L, k<sub>12</sub> = 12EI/L&sup3;, k<sub>6</sub> = 6EI/L&sup2;, k<sub>4</sub> = 4EI/L, k<sub>2</sub> = 2EI/L.<br>" +
+            `Correct matrix for Member ${i + 1} (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+          hintEl.classList.remove("hidden")
+          stiffMemberScores[i] = 0
+        }
+        scoreEl.textContent = `Member ${i + 1} score: ${stiffMemberScores[i].toFixed(1)} / 2`
+
+        stepScores.stiff = stiffMemberScores.reduce((a, b) => a + b, 0)
+        const maxStiff = stiffMemberScores.length * 2
+        const totalEl = document.getElementById("p3-frame-step2-totalscore")
+        if (totalEl) totalEl.textContent = `Step 2 total: ${stepScores.stiff.toFixed(1)} / ${maxStiff}`
+        updateFrameScore()
+
+        // Any check attempt (right or wrong) unlocks Step 3, same as
+        // every other step's Check button.
+        const step3 = document.getElementById("p3-frame-step3")
+        if (step3) step3.classList.remove("hidden")
+      }
+
+      window.p3FrameCheckStep3Member = function (i) {
+        const e = result.els[i]
+        const mat = globalStiffnessMatrix6(e)
+        let allCorrect = true
+        for (let r = 0; r < 6; r++) {
+          for (let c = 0; c < 6; c++) {
+            const el = document.getElementById(`p3-frame-s3-m${r}${c}-${i}`)
+            const val = parseFloat(el.value)
+            if (closeEnoughHi(val, mat[r][c])) { el.classList.remove("incorrect"); el.classList.add("correct") }
+            else { el.classList.remove("correct"); el.classList.add("incorrect"); allCorrect = false }
+          }
+        }
+        const feedbackEl = document.getElementById(`p3-frame-s3-feedback${i}`)
+        const hintEl = document.getElementById(`p3-frame-s3-hint${i}`)
+        const scoreEl = document.getElementById(`p3-frame-s3-score${i}`)
+        if (allCorrect) {
+          feedbackEl.textContent = "Correct!"; feedbackEl.className = "quiz-feedback correct"
+          hintEl.classList.add("hidden")
+          globalStiffMemberScores[i] = 2
+        } else {
+          feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
+          feedbackEl.className = "quiz-feedback incorrect"
+          hintEl.innerHTML = "<strong>Hint:</strong> DOF order [U<sub>1</sub>, V<sub>1</sub>, &theta;<sub>1</sub>, U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>]; " +
+            "[K<sub>global</sub>] = [T]<sup>T</sup>[k<sub>local</sub>][T] using this member's c, s from Step 1 and its local matrix from Step 2.<br>" +
+            `Correct matrix for Member ${i + 1} (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+          hintEl.classList.remove("hidden")
+          globalStiffMemberScores[i] = 0
+        }
+        scoreEl.textContent = `Member ${i + 1} score: ${globalStiffMemberScores[i].toFixed(1)} / 2`
+
+        stepScores.globalStiff = globalStiffMemberScores.reduce((a, b) => a + b, 0)
+        const maxGlobal = globalStiffMemberScores.length * 2
+        const totalEl = document.getElementById("p3-frame-step3-totalscore")
+        if (totalEl) totalEl.textContent = `Step 3 total: ${stepScores.globalStiff.toFixed(1)} / ${maxGlobal}`
+        updateFrameScore()
+
+        // Any check attempt (right or wrong) unlocks Step 4, same as
+        // every other step's Check button.
+        const step4 = document.getElementById("p3-frame-step4")
+        if (step4) step4.classList.remove("hidden")
+      }
+
+      // Step 4 (the entire unreduced global stiffness matrix) and Step 5
+      // (the reduced 3×3 matrix at the free joint) are each a single
+      // matrix rather than a per-element one, so they're checked as one
+      // block — not per-element like Steps 2/3, and not through the
+      // generic gradeStep (which disables its Check button after one
+      // attempt); these buttons stay enabled so the student can fix
+      // entries and re-check as many times as they like.
+      window.p3FrameCheckStep4 = function () {
+        const mat = fullGlobalStiffnessMatrix(result, M)
+        const n = mat.length
+        let allCorrect = true
+        for (let r = 0; r < n; r++) {
+          for (let c = 0; c < n; c++) {
+            const el = document.getElementById(`p3-frame-s4-m${r}_${c}`)
+            const val = parseFloat(el.value)
+            if (closeEnoughHi(val, mat[r][c])) { el.classList.remove("incorrect"); el.classList.add("correct") }
+            else { el.classList.remove("correct"); el.classList.add("incorrect"); allCorrect = false }
+          }
+        }
+        const feedbackEl = document.getElementById("p3-frame-step4-feedback")
+        const hintEl = document.getElementById("p3-frame-step4-hint")
+        const scoreEl = document.getElementById("p3-frame-step4-score")
+        if (allCorrect) {
+          feedbackEl.textContent = "Correct!"; feedbackEl.className = "quiz-feedback correct"
+          hintEl.classList.add("hidden")
+          stepScores.fullK = 2
+        } else {
+          feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
+          feedbackEl.className = "quiz-feedback incorrect"
+          hintEl.innerHTML = "<strong>Hint:</strong> Place each member's 6&times;6 global matrix from Step 3 into its support node's and the free joint's rows/columns, adding overlapping contributions.<br>" +
+            `Correct matrix (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+          hintEl.classList.remove("hidden")
+          stepScores.fullK = 0
+        }
+        scoreEl.textContent = `Step score: ${stepScores.fullK.toFixed(1)} / 2`
+        updateFrameScore()
+
+        // Any check attempt (right or wrong) unlocks Step 5, same as
+        // every other step's Check button.
+        const step5 = document.getElementById("p3-frame-step5")
+        if (step5) step5.classList.remove("hidden")
+      }
+
+      // ── Step 4 (entire global stiffness matrix) Export / Import ──
+      // A single matrix rather than one-per-element, so it uses a plain
+      // grid CSV (N rows of N comma-separated values, no "Element N"
+      // header) instead of the Steps 2/3 element format.
+      window.p3FrameStep4Export = function () {
+        const n = 3 * (M + 1)
+        const lines = []
+        for (let r = 0; r < n; r++) {
+          const row = []
+          for (let c = 0; c < n; c++) {
+            const el = document.getElementById(`p3-frame-s4-m${r}_${c}`)
+            row.push(el ? el.value : "")
+          }
+          lines.push(row.join(","))
+        }
+        const csv = lines.join("\n") + "\n"
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "frame_step4_global_stiffness_matrix.csv"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+
+      window.p3FrameStep4ImportFileChosen = function () {
+        const fileInput = document.getElementById("p3-frame-step4-importFile")
+        const errEl = document.getElementById("p3-frame-step4-import-error")
+        const file = fileInput.files && fileInput.files[0]
+        if (!file) return
+        if (errEl) { errEl.style.display = "none"; errEl.innerHTML = "" }
+
+        function showImportError(msg) {
+          if (!errEl) return
+          errEl.innerHTML = msg
+          errEl.style.display = "block"
+        }
+
+        const reader = new FileReader()
+        reader.onerror = function () {
+          showImportError("Could not read that file.")
+          fileInput.value = ""
+        }
+        reader.onload = function (evt) {
+          const n = 3 * (M + 1)
+          const text = String(evt.target.result).replace(/^\uFEFF/, "")
+          const rows = text.split(/\r?\n/).filter(l => l.trim() !== "").map(l => l.split(","))
+          const badRow = rows.find(row => row.length !== n)
+          if (rows.length !== n || badRow) {
+            showImportError(`Expected a ${n}&times;${n} grid of comma-separated values (${n} rows of ${n}) &mdash; found ${rows.length} row${rows.length === 1 ? "" : "s"}` +
+              (badRow ? ` (one with ${badRow.length} value${badRow.length === 1 ? "" : "s"} instead of ${n})` : "") + ". Nothing was imported.")
+            fileInput.value = ""
+            return
+          }
+          for (let r = 0; r < n; r++) {
+            for (let c = 0; c < n; c++) {
+              const el = document.getElementById(`p3-frame-s4-m${r}_${c}`)
+              if (el) {
+                el.value = rows[r][c].trim()
+                el.classList.remove("correct", "incorrect")
+              }
+            }
+          }
+          fileInput.value = ""
+        }
+        reader.readAsText(file)
+      }
+
+      window.p3FrameCheckStep5 = function () {
+        const mat = assembledMatrix(result)
+        let allCorrect = true
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 3; c++) {
+            const el = document.getElementById(`p3-frame-s5-m${r}${c}`)
+            const val = parseFloat(el.value)
+            if (closeEnoughHi(val, mat[r][c])) { el.classList.remove("incorrect"); el.classList.add("correct") }
+            else { el.classList.remove("correct"); el.classList.add("incorrect"); allCorrect = false }
+          }
+        }
+        const feedbackEl = document.getElementById("p3-frame-step5-feedback")
+        const hintEl = document.getElementById("p3-frame-step5-hint")
+        const scoreEl = document.getElementById("p3-frame-step5-score")
+        if (allCorrect) {
+          feedbackEl.textContent = "Correct!"; feedbackEl.className = "quiz-feedback correct"
+          hintEl.classList.add("hidden")
+          stepScores.assemble = 2
+        } else {
+          feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
+          feedbackEl.className = "quiz-feedback incorrect"
+          hintEl.innerHTML = "<strong>Hint:</strong> Sum each member's contribution as given above over all members (DOF order [u<sub>x</sub>, u<sub>y</sub>, &theta;]).<br>" +
+            `Correct matrix (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+          hintEl.classList.remove("hidden")
+          stepScores.assemble = 0
+        }
+        scoreEl.textContent = `Step score: ${stepScores.assemble.toFixed(1)} / 2`
+        updateFrameScore()
+
+        // Any check attempt (right or wrong) unlocks Step 6, same as
+        // every other step's Check button.
+        const step6 = document.getElementById("p3-frame-step6")
+        if (step6) step6.classList.remove("hidden")
+      }
+
+      // ── Step 5 (reduced stiffness matrix) Export / Import ──
+      // A single 3×3 matrix rather than one-per-element, so it uses a
+      // plain grid CSV (3 rows of 3 comma-separated values, no
+      // "Element N" header) instead of the Steps 2/3 element format.
+      window.p3FrameStep5Export = function () {
+        const lines = []
+        for (let r = 0; r < 3; r++) {
+          const row = []
+          for (let c = 0; c < 3; c++) {
+            const el = document.getElementById(`p3-frame-s5-m${r}${c}`)
+            row.push(el ? el.value : "")
+          }
+          lines.push(row.join(","))
+        }
+        const csv = lines.join("\n") + "\n"
+        const blob = new Blob([csv], { type: "text/csv" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = "frame_step5_reduced_stiffness_matrix.csv"
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+
+      window.p3FrameStep5ImportFileChosen = function () {
+        const fileInput = document.getElementById("p3-frame-step5-importFile")
+        const errEl = document.getElementById("p3-frame-step5-import-error")
+        const file = fileInput.files && fileInput.files[0]
+        if (!file) return
+        if (errEl) { errEl.style.display = "none"; errEl.innerHTML = "" }
+
+        function showImportError(msg) {
+          if (!errEl) return
+          errEl.innerHTML = msg
+          errEl.style.display = "block"
+        }
+
+        const reader = new FileReader()
+        reader.onerror = function () {
+          showImportError("Could not read that file.")
+          fileInput.value = ""
+        }
+        reader.onload = function (evt) {
+          const text = String(evt.target.result).replace(/^\uFEFF/, "")
+          const rows = text.split(/\r?\n/).filter(l => l.trim() !== "").map(l => l.split(","))
+          const badRow = rows.find(row => row.length !== 3)
+          if (rows.length !== 3 || badRow) {
+            showImportError(`Expected a 3&times;3 grid of comma-separated values (3 rows of 3) &mdash; found ${rows.length} row${rows.length === 1 ? "" : "s"}` +
+              (badRow ? ` (one with ${badRow.length} value${badRow.length === 1 ? "" : "s"} instead of 3)` : "") + ". Nothing was imported.")
+            fileInput.value = ""
+            return
+          }
+          for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+              const el = document.getElementById(`p3-frame-s5-m${r}${c}`)
+              if (el) {
+                el.value = rows[r][c].trim()
+                el.classList.remove("correct", "incorrect")
+              }
+            }
+          }
+          fileInput.value = ""
+        }
+        reader.readAsText(file)
+      }
+
+      window.p3FrameCheckStep6 = function () {
+        const checks = [
+          { id: "p3-frame-s6-fx", expected: params.Fx },
+          { id: "p3-frame-s6-fy", expected: params.Fy },
+          { id: "p3-frame-s6-m0", expected: params.M0 },
+        ]
+        const hint = "<strong>Hint:</strong> The reduced load vector is simply the applied load/moment at the free joint (DOF order [u<sub>x</sub>, u<sub>y</sub>, &theta;]).<br>" +
+          `F<sub>x</sub> = ${fmt(params.Fx)}, F<sub>y</sub> = ${fmt(params.Fy)}, M = ${fmt(params.M0)}.`
+        gradeStep("loadVec", checks, document.getElementById("p3-frame-step6-feedback"), document.getElementById("p3-frame-step6-hint"),
+          document.getElementById("p3-frame-step6-score"), hint, document.getElementById("p3-frame-step6-checkBtn"), "p3-frame-step7", 1)
+      }
+
+      window.p3FrameCheckStep7 = function () {
+        const checks = [
+          { id: "p3-frame-s7-ux", expected: result.ux },
+          { id: "p3-frame-s7-uy", expected: result.uy },
+          { id: "p3-frame-s7-th", expected: result.th },
+        ]
+        const hint = "<strong>Hint:</strong> Solve the 3&times;3 system [K]&middot;[u<sub>x</sub>,u<sub>y</sub>,&theta;] = [F<sub>x</sub>,F<sub>y</sub>,M].<br>" +
+          `u<sub>x</sub> = ${fmt(result.ux)}, u<sub>y</sub> = ${fmt(result.uy)}, &theta; = ${fmt(result.th)}.`
+        gradeStep("solve", checks, document.getElementById("p3-frame-step7-feedback"), document.getElementById("p3-frame-step7-hint"),
+          document.getElementById("p3-frame-step7-score"), hint, document.getElementById("p3-frame-step7-checkBtn"), "p3-frame-step8", 2, closeEnoughLo)
+      }
+
+      window.p3FrameCheckStep8 = function () {
+        const checks = []
+        result.els.forEach((e, i) => {
+          const F = globalMemberForces(e, result)
+          checks.push({ id: `p3-frame-s8-fx1-${i}`, expected: F[0] })
+          checks.push({ id: `p3-frame-s8-fy1-${i}`, expected: F[1] })
+          checks.push({ id: `p3-frame-s8-m1-${i}`, expected: F[2] })
+          checks.push({ id: `p3-frame-s8-fx2-${i}`, expected: F[3] })
+          checks.push({ id: `p3-frame-s8-fy2-${i}`, expected: F[4] })
+          checks.push({ id: `p3-frame-s8-m2-${i}`, expected: F[5] })
+        })
+        const hint = "<strong>Hint:</strong> {F} = [K<sub>global</sub>]{d}, with {d} = [0, 0, 0, u<sub>x</sub>, u<sub>y</sub>, &theta;] (the support end doesn't move).<br>" +
+          result.els.map((e, i) => {
+            const F = globalMemberForces(e, result)
+            return `Member ${i + 1}: F<sub>x1</sub> = ${fmt(F[0])}, F<sub>y1</sub> = ${fmt(F[1])}, M<sub>1</sub> = ${fmt(F[2])}, F<sub>x2</sub> = ${fmt(F[3])}, F<sub>y2</sub> = ${fmt(F[4])}, M<sub>2</sub> = ${fmt(F[5])}.`
+          }).join("<br>")
+        gradeStep("forces", checks, document.getElementById("p3-frame-step8-feedback"), document.getElementById("p3-frame-step8-hint"),
+          document.getElementById("p3-frame-step8-score"), hint, document.getElementById("p3-frame-step8-checkBtn"), "p3-frame-step9", 2, closeEnoughLo)
+      }
+
+      window.p3FrameCheckStep9 = function () {
+        const checks = []
+        result.els.forEach((e, i) => {
+          const F = localMemberForces(e, result)
+          checks.push({ id: `p3-frame-s9-n1-${i}`, expected: F[0] })
+          checks.push({ id: `p3-frame-s9-v1-${i}`, expected: F[1] })
+          checks.push({ id: `p3-frame-s9-m1-${i}`, expected: F[2] })
+          checks.push({ id: `p3-frame-s9-n2-${i}`, expected: F[3] })
+          checks.push({ id: `p3-frame-s9-v2-${i}`, expected: F[4] })
+          checks.push({ id: `p3-frame-s9-m2-${i}`, expected: F[5] })
+        })
+        const hint = "<strong>Hint:</strong> {F<sub>local</sub>} = [T]{F<sub>global</sub>}, using the member's transformation matrix from Step 3 on the Step 8 global force vector.<br>" +
+          result.els.map((e, i) => {
+            const F = localMemberForces(e, result)
+            return `Member ${i + 1}: N<sub>1</sub> = ${fmt(F[0])}, V<sub>1</sub> = ${fmt(F[1])}, M<sub>1</sub> = ${fmt(F[2])}, N<sub>2</sub> = ${fmt(F[3])}, V<sub>2</sub> = ${fmt(F[4])}, M<sub>2</sub> = ${fmt(F[5])}.`
+          }).join("<br>")
+        gradeStep("localForces", checks, document.getElementById("p3-frame-step9-feedback"), document.getElementById("p3-frame-step9-hint"),
+          document.getElementById("p3-frame-step9-score"), hint, document.getElementById("p3-frame-step9-checkBtn"), null, 2, closeEnoughLo)
+      }
+
+      // Initial random frame on page load.
+      document.getElementById("p3-frame-in-numMembers").value = "3"
+      p3FrameRebuildMemberFields()
+      p3FrameRandomize()
+
+      // In grading mode (iGrade === 0, the default), the student gets one
+      // auto-generated random frame and cannot re-randomize, export,
+      // import, or edit/redraw it, so the "Export", "Import", and
+      // "Draw Diagram & Start" controls are hidden and every input field
+      // is locked read-only.
+      //
+      // In iGrade === 1 (e.g. instructor preview), those controls are
+      // shown AND every input field in Problem 3 — the number of members,
+      // the free-joint coordinates, each member's support
+      // coordinates/EA/EI, and the applied Fx/Fy/M — becomes directly
+      // editable.
+      if (iGrade === 1) {
+        const editableIds = ["p3-frame-in-numMembers", "p3-frame-in-fx", "p3-frame-in-fy",
+          "p3-frame-in-Fx", "p3-frame-in-Fy", "p3-frame-in-M"]
+        editableIds.forEach(id => {
+          const el = document.getElementById(id)
+          if (el) { el.disabled = false; el.readOnly = false }
+        })
+        // Unlock the already-rendered per-member fields directly (rather
+        // than re-rendering them via p3FrameRebuildMemberFields, which
+        // would wipe out the values p3FrameRandomize() just filled in).
+        for (let i = 0; i < M; i++) {
+          ["mx", "my", "EA", "EI"].forEach(key => {
+            const el = document.getElementById(`p3-frame-in-${key}${i}`)
+            if (el) el.readOnly = false
+          })
+        }
+      } else {
+        const exportBtn = document.getElementById("p3-frame-exportBtn")
+        if (exportBtn) exportBtn.classList.add("hidden")
+        const importBtn = document.getElementById("p3-frame-importBtn")
+        if (importBtn) importBtn.classList.add("hidden")
+        const drawBtn = document.getElementById("p3-frame-drawBtn")
+        if (drawBtn) drawBtn.classList.add("hidden")
+      }
+
+      })();
+    </script>
+  </body>
+</html>
