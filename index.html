@@ -290,7 +290,7 @@
           <p><strong>Name:</strong> <span id="print-header-name"></span> &nbsp;&nbsp; <strong>ID:</strong> <span id="print-header-id"></span></p>
           <p><strong>Printed:</strong> <span id="print-header-date"></span></p>
         </div>
-        <div class="summary-grand-total">Total Score: <span id="grand-total">0.0</span> / 30</div>
+        <div class="summary-grand-total">Total Score: <span id="grand-total">0.0</span> / 45</div>
         <button class="print-btn no-print" onclick="printSummary()">&#128424; Print / Save as PDF</button>
         <div class="summary-row hidden" id="summary-baseline-row">
           <span>Carried over from a resumed session</span>
@@ -306,7 +306,7 @@
         </div>
         <div class="summary-row">
           <span>Problem 3: 2D Frame FEM (max 25)</span>
-          <span class="score"><span id="summary-p3-score">0.0</span> / 10</span>
+          <span class="score"><span id="summary-p3-score">0.0</span> / 25</span>
         </div>
         <p class="subtitle" style="margin-top: 20px;">Switch to the Problem 1, Problem 2, or Problem 3 tab above to work through the questions.</p>
 
@@ -346,7 +346,7 @@
             <p class="reminder">Paste the entire code into the Canvas Homework 4 text-entry submission.</p>
           </div>
 
-          <p class="code-note">The code encodes your name, ID, and the full score breakdown for every sub-tab (<span id="code-score-snapshot">0.0</span> / 42) with a tamper-check built in. Your submission code records the date and time it was generated. Generate a new code after making changes and immediately before submitting in Canvas. Submit the code before the Canvas due date. Keep a copy of your code until your grade is posted.</p>
+          <p class="code-note">The code encodes your name, ID, and the full score breakdown for every sub-tab (<span id="code-score-snapshot">0.0</span> / 45) with a tamper-check built in. Your submission code records the date and time it was generated. Generate a new code after making changes and immediately before submitting in Canvas. Submit the code before the Canvas due date. Keep a copy of your code until your grade is posted.</p>
           <p class="identity-locked-note hidden" id="identity-locked-note">Name and ID are now locked for this session.</p>
           <p class="code-warning hidden" id="code-warning-msg"></p>
           <button class="unlock-btn" onclick="unlockIdentityAndReset()">Unlock Identity / Start Over</button>
@@ -654,7 +654,7 @@
       // ═══════════════════════════════════════════
       (function () {
         const HOMEWORK_ID = "HW4"
-        const HOMEWORK_MAX = 30
+        const HOMEWORK_MAX = 45
         const CODE_LIFETIME_MS = 14 * 24 * 60 * 60 * 1000 // 14 days
         const SALT = "fem-hw4-2026-v1"
 
