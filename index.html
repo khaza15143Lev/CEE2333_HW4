@@ -736,7 +736,25 @@
             ? `${matState.downloaded ? 1 : 0},${matState.checked ? 1 : 0},${matState.values.join(",")}`
             : ""
 
-          const payload = `${name}|${id}|${p1csv}|${p2csv}|${p3csv}|${HOMEWORK_MAX}|${score.toFixed(1)}|${timestamp}|${matAField}`
+          // Likewise for Problem 1: p1GetTabScores only carries the
+          // aggregate score per tab, so without this every field the
+          // student typed — including ones that are only graded as part
+          // of an all-or-nothing block, like each individual Gauss point
+          // row — would come back blank on resume.
+          const p1State = (typeof window.p1GetFullState === "function") ? window.p1GetFullState() : null
+          const p1StateField = p1State ? b64EncodeUnicode(JSON.stringify(p1State)) : ""
+
+          // Likewise for Problem 3: p3GetTabScores only carries the
+          // aggregate score, so without this every field the student
+          // typed across all 9 steps would come back blank on resume.
+          // base64-wrapped (like p1StateField below) so that no matter
+          // what a student typed into any field, the encoded result can
+          // never contain a literal "|" and corrupt the outer payload.
+          const frameState = (typeof window.p3FrameGetState === "function") ? window.p3FrameGetState() : null
+          const frameStateRaw = (frameState && typeof window.p3EncodeState === "function") ? window.p3EncodeState(frameState) : ""
+          const frameStateField = frameStateRaw ? b64EncodeUnicode(frameStateRaw) : ""
+
+          const payload = `${name}|${id}|${p1csv}|${p2csv}|${p3csv}|${HOMEWORK_MAX}|${score.toFixed(1)}|${timestamp}|${matAField}|${frameStateField}|${p1StateField}`
           const encodedPayload = b64EncodeUnicode(payload)
           const digest = await sha256Hex(payload + "|" + SALT)
           const checksum = digest.slice(0, 12)
@@ -870,6 +888,8 @@
             if (window.p2SetTabScores) window.p2SetTabScores(decoded.breakdown.p2)
             if (decoded.breakdown.p3 && window.p3SetTabScores) window.p3SetTabScores(decoded.breakdown.p3)
             if (decoded.matA && window.p2SetMatrixState) window.p2SetMatrixState(decoded.matA)
+            if (decoded.frameState && window.p3FrameSetState) window.p3FrameSetState(decoded.frameState)
+            if (decoded.p1State && window.p1SetFullState) window.p1SetFullState(decoded.p1State)
           } else {
             window.resumeBaselineScore = clamp(parseFloat(decoded.score) || 0, 0, HOMEWORK_MAX)
             if (typeof updateGrandTotal === "function") updateGrandTotal()
@@ -911,6 +931,53 @@
             valid = expected === checksum
           }
 
+          if (fields.length === 11) {
+            const [name, id, p1csv, p2csv, p3csv, max, score, timestampStr, matAField, frameStateField, p1StateField] = fields
+            const breakdown = {
+              p1: zipKeysClamped(P1_KEYS, p1csv.split(",").map(Number)),
+              p2: zipKeysClamped(P2_KEYS, p2csv.split(",").map(Number)),
+              p3: zipKeysClamped(P3_KEYS, p3csv.split(",").map(Number)),
+            }
+            const timestamp = parseInt(timestampStr, 10)
+            const hasTimestamp = isFinite(timestamp)
+            const expired = hasTimestamp && (Date.now() - timestamp > CODE_LIFETIME_MS)
+            let matA = null
+            if (matAField) {
+              const nums = matAField.split(",").map(Number)
+              if (nums.length === 66 && !nums.some(Number.isNaN)) {
+                matA = { downloaded: !!nums[0], checked: !!nums[1], values: nums.slice(2) }
+              }
+            }
+            let frameState = null
+            if (frameStateField && typeof window.p3DecodeState === "function") {
+              try { frameState = window.p3DecodeState(b64DecodeUnicode(frameStateField)) } catch (e) { frameState = null }
+            }
+            let p1State = null
+            if (p1StateField) {
+              try { p1State = JSON.parse(b64DecodeUnicode(p1StateField)) } catch (e) { p1State = null }
+            }
+            return { raw: rawLine, prefix, name, id, score, max, valid, breakdown, matA, frameState, p1State, timestamp: hasTimestamp ? timestamp : null, expired, scheme }
+          }
+          if (fields.length === 10) {
+            const [name, id, p1csv, p2csv, p3csv, max, score, timestampStr, matAField, frameStateField] = fields
+            const breakdown = {
+              p1: zipKeysClamped(P1_KEYS, p1csv.split(",").map(Number)),
+              p2: zipKeysClamped(P2_KEYS, p2csv.split(",").map(Number)),
+              p3: zipKeysClamped(P3_KEYS, p3csv.split(",").map(Number)),
+            }
+            const timestamp = parseInt(timestampStr, 10)
+            const hasTimestamp = isFinite(timestamp)
+            const expired = hasTimestamp && (Date.now() - timestamp > CODE_LIFETIME_MS)
+            let matA = null
+            if (matAField) {
+              const nums = matAField.split(",").map(Number)
+              if (nums.length === 66 && !nums.some(Number.isNaN)) {
+                matA = { downloaded: !!nums[0], checked: !!nums[1], values: nums.slice(2) }
+              }
+            }
+            const frameState = (frameStateField && typeof window.p3DecodeState === "function") ? window.p3DecodeState(frameStateField) : null
+            return { raw: rawLine, prefix, name, id, score, max, valid, breakdown, matA, frameState, timestamp: hasTimestamp ? timestamp : null, expired, scheme }
+          }
           if (fields.length === 9) {
             const [name, id, p1csv, p2csv, p3csv, max, score, timestampStr, matAField] = fields
             const breakdown = {
@@ -1250,6 +1317,28 @@
         updateTotalScore()
       };
 
+      // ── Full-state save / restore (used by "Generate Code") ──
+      // p1GetTabScores/p1SetTabScores only carry the aggregate score per
+      // tab; without this, resuming a code would regenerate 4 brand-new
+      // random problems and every field the student had typed in (even
+      // ones that were never individually graded, like each Gauss point
+      // row) would come back blank.
+      window.p1GetFullState = function () {
+        return {
+          quad: window.p1QuadGetState ? window.p1QuadGetState() : null,
+          bilin: window.p1BilinGetState ? window.p1BilinGetState() : null,
+          gauss1d: window.p1Gauss1dGetState ? window.p1Gauss1dGetState() : null,
+          gauss2d: window.p1Gauss2dGetState ? window.p1Gauss2dGetState() : null,
+        }
+      };
+      window.p1SetFullState = function (state) {
+        if (!state) return
+        if (state.quad && window.p1QuadSetState) window.p1QuadSetState(state.quad)
+        if (state.bilin && window.p1BilinSetState) window.p1BilinSetState(state.bilin)
+        if (state.gauss1d && window.p1Gauss1dSetState) window.p1Gauss1dSetState(state.gauss1d)
+        if (state.gauss2d && window.p1Gauss2dSetState) window.p1Gauss2dSetState(state.gauss2d)
+      };
+
       // ═══════════════════════════════════════════
       //  (a) QUADRATIC (LAGRANGE) INTERPOLATION
       //  nProblems = 4 is this tab's max score; nAns = 2 points are added
@@ -1321,6 +1410,34 @@
           tabScores.quad = window.clampScore(nScore, tabMaxes.quad); updateTotalScore()
 
           if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        // ── state persistence for the "coded score" resume system ──
+        window.p1QuadGetState = function () {
+          const el = document.getElementById("p1-quad-quiz-input")
+          return { nodeX: nodeX.slice(), nodeF: nodeF.slice(), xQuery, answer, value: el ? el.value : "" }
+        }
+        window.p1QuadSetState = function (state) {
+          if (!state) return
+          nodeX = state.nodeX.slice(); nodeF = state.nodeF.slice()
+          xQuery = state.xQuery; answer = state.answer
+          nScore = window.clampScore(tabScores.quad, nProblems)
+
+          document.getElementById("p1-quad-display").innerHTML = `
+            <p>A single quadratic g(x) passes through the three points below:</p>
+            <table class="points-table">
+              <tr><th>x</th>${nodeX.map(x => `<td>${formatInput(x)}</td>`).join("")}</tr>
+              <tr><th>g(x)</th>${nodeF.map(f => `<td>${formatInput(f)}</td>`).join("")}</tr>
+            </table>
+            <p>Using Lagrange quadratic interpolation through these three points, find g(${formatInput(xQuery)}).</p>`
+          document.getElementById("p1-quad-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-quad-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-quad-quiz-inputs").innerHTML = `
+            <div class="quiz-input-row"><span>g(${formatInput(xQuery)}) = </span><input type="text" id="p1-quad-quiz-input"></div>`
+          document.getElementById("p1-quad-quiz-input").value = state.value || ""
+          document.getElementById("p1-quad-quizCheckBtn").disabled = false
+          document.getElementById("p1-quad-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          generateBtn.disabled = (nScore >= nProblems)
         }
 
         p1QuadGenerate()
@@ -1401,6 +1518,38 @@
           tabScores.bilin = window.clampScore(nScore, tabMaxes.bilin); updateTotalScore()
 
           if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        // ── state persistence for the "coded score" resume system ──
+        window.p1BilinGetState = function () {
+          const el = document.getElementById("p1-bilin-quiz-input")
+          return { x1v, x2v, y1v, y2v, f11, f21, f12, f22, xQuery, yQuery, answer, value: el ? el.value : "" }
+        }
+        window.p1BilinSetState = function (state) {
+          if (!state) return
+          x1v = state.x1v; x2v = state.x2v; y1v = state.y1v; y2v = state.y2v
+          f11 = state.f11; f21 = state.f21; f12 = state.f12; f22 = state.f22
+          xQuery = state.xQuery; yQuery = state.yQuery; answer = state.answer
+          nScore = window.clampScore(tabScores.bilin, nProblems)
+
+          document.getElementById("p1-bilin-display").innerHTML = `
+            <p>The value of a field f(x,y) is known at the four corners of a rectangle:</p>
+            <table class="points-table">
+              <tr><th>x</th><th>y</th><th>f(x,y)</th></tr>
+              <tr><td>${formatInput(x1v)}</td><td>${formatInput(y1v)}</td><td>${formatInput(f11)}</td></tr>
+              <tr><td>${formatInput(x2v)}</td><td>${formatInput(y1v)}</td><td>${formatInput(f21)}</td></tr>
+              <tr><td>${formatInput(x1v)}</td><td>${formatInput(y2v)}</td><td>${formatInput(f12)}</td></tr>
+              <tr><td>${formatInput(x2v)}</td><td>${formatInput(y2v)}</td><td>${formatInput(f22)}</td></tr>
+            </table>
+            <p>Using bilinear interpolation, find f(${formatInput(xQuery)}, ${formatInput(yQuery)}).</p>`
+          document.getElementById("p1-bilin-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-bilin-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-bilin-quiz-inputs").innerHTML = `
+            <div class="quiz-input-row"><span>f(${formatInput(xQuery)}, ${formatInput(yQuery)}) = </span><input type="text" id="p1-bilin-quiz-input"></div>`
+          document.getElementById("p1-bilin-quiz-input").value = state.value || ""
+          document.getElementById("p1-bilin-quizCheckBtn").disabled = false
+          document.getElementById("p1-bilin-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          generateBtn.disabled = (nScore >= nProblems)
         }
 
         p1BilinGenerate()
@@ -1502,6 +1651,65 @@
           tabScores.gauss1d = window.clampScore(nScore, tabMaxes.gauss1d); updateTotalScore()
 
           if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        // ── state persistence for the "coded score" resume system ──
+        // All n Gauss-point rows (t, w, x) are saved even though they're
+        // only ever graded together with the final I as one all-or-
+        // nothing block — every value the student typed is preserved,
+        // not just whichever ones happen to move the score.
+        window.p1Gauss1dGetState = function () {
+          const rowVals = []
+          for (let i = 0; i < n; i++) {
+            rowVals.push([
+              (document.getElementById(`p1-gauss1d-quiz-t${i}`) || {}).value || "",
+              (document.getElementById(`p1-gauss1d-quiz-w${i}`) || {}).value || "",
+              (document.getElementById(`p1-gauss1d-quiz-x${i}`) || {}).value || "",
+            ])
+          }
+          const IEl = document.getElementById("p1-gauss1d-quiz-I")
+          return { n, a, b, c, d, e, xA, xB, rowVals, Ivalue: IEl ? IEl.value : "" }
+        }
+        window.p1Gauss1dSetState = function (state) {
+          if (!state) return
+          n = state.n; a = state.a; b = state.b; c = state.c; d = state.d; e = state.e
+          xA = state.xA; xB = state.xB
+          halfLength = (xB - xA) / 2
+          mid = (xB + xA) / 2
+          const table = GAUSS_TABLE[n]
+          ts = table.t.slice()
+          ws = table.w.slice()
+          const f = x => a * x ** 4 + b * x ** 3 + c * x ** 2 + d * x + e
+          xs = ts.map(t => halfLength * t + mid)
+          fs = xs.map(f)
+          answer = halfLength * fs.reduce((sum, fv, i) => sum + ws[i] * fv, 0)
+          nScore = window.clampScore(tabScores.gauss1d, nProblems)
+
+          const fStr = polyTermsHTML([a, b, c, d, e], ["x<sup>4</sup>", "x<sup>3</sup>", "x<sup>2</sup>", "x", ""])
+          document.getElementById("p1-gauss1d-display").innerHTML = `
+            <p>Use ${n}-point Gauss quadrature to approximate:</p>
+            <p class="math-formula">&int;<sub>${formatInput(xA)}</sub><sup>${formatInput(xB)}</sup> (${fStr}) dx</p>`
+
+          let inputsHtml = ""
+          for (let i = 0; i < n; i++) {
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss point t<sub>${i + 1}</sub> (natural coordinate) = </span><input type="text" id="p1-gauss1d-quiz-t${i}" placeholder="${window.sigFigsNote(ts[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss weight w<sub>${i + 1}</sub> = </span><input type="text" id="p1-gauss1d-quiz-w${i}" placeholder="${window.sigFigsNote(ws[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Physical point x<sub>${i + 1}</sub> = </span><input type="text" id="p1-gauss1d-quiz-x${i}" placeholder="${window.sigFigsNote(xs[i], GAUSS_SIG_FIGS)}"></div>`
+          }
+          inputsHtml += `<div class="quiz-input-row"><span>Approximate integral I &asymp; </span><input type="text" id="p1-gauss1d-quiz-I" placeholder="${window.sigFigsNote(answer, GAUSS_SIG_FIGS)}"></div>`
+          document.getElementById("p1-gauss1d-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-gauss1d-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-gauss1d-quiz-inputs").innerHTML = inputsHtml
+
+          for (let i = 0; i < n && state.rowVals[i]; i++) {
+            document.getElementById(`p1-gauss1d-quiz-t${i}`).value = state.rowVals[i][0] || ""
+            document.getElementById(`p1-gauss1d-quiz-w${i}`).value = state.rowVals[i][1] || ""
+            document.getElementById(`p1-gauss1d-quiz-x${i}`).value = state.rowVals[i][2] || ""
+          }
+          document.getElementById("p1-gauss1d-quiz-I").value = state.Ivalue || ""
+          document.getElementById("p1-gauss1d-quizCheckBtn").disabled = false
+          document.getElementById("p1-gauss1d-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          generateBtn.disabled = (nScore >= nProblems)
         }
 
         p1Gauss1dGenerate()
@@ -1616,6 +1824,85 @@
           tabScores.gauss2d = window.clampScore(nScore, tabMaxes.gauss2d); updateTotalScore()
 
           if (nScore < nProblems) generateBtn.disabled = false
+        }
+
+        // ── state persistence for the "coded score" resume system ──
+        // All Gauss-point rows (both x- and y-direction) are saved even
+        // though they're only ever graded together with the final I as
+        // one all-or-nothing block.
+        window.p1Gauss2dGetState = function () {
+          const xVals = []
+          for (let i = 0; i < nx; i++) {
+            xVals.push([
+              (document.getElementById(`p1-gauss2d-quiz-tx${i}`) || {}).value || "",
+              (document.getElementById(`p1-gauss2d-quiz-wx${i}`) || {}).value || "",
+              (document.getElementById(`p1-gauss2d-quiz-x${i}`) || {}).value || "",
+            ])
+          }
+          const yVals = []
+          for (let j = 0; j < ny; j++) {
+            yVals.push([
+              (document.getElementById(`p1-gauss2d-quiz-ty${j}`) || {}).value || "",
+              (document.getElementById(`p1-gauss2d-quiz-wy${j}`) || {}).value || "",
+              (document.getElementById(`p1-gauss2d-quiz-y${j}`) || {}).value || "",
+            ])
+          }
+          const IEl = document.getElementById("p1-gauss2d-quiz-I")
+          return { nx, ny, p, q, xB: midX + hx, yB: midY + hy, xVals, yVals, Ivalue: IEl ? IEl.value : "" }
+        }
+        window.p1Gauss2dSetState = function (state) {
+          if (!state) return
+          nx = state.nx; ny = state.ny; p = state.p; q = state.q
+          const f = (x, y) => p * x * x * y + q * x * y * y
+          const xA = 0, xB = state.xB, yA = 0, yB = state.yB
+          hx = (xB - xA) / 2; midX = (xB + xA) / 2
+          hy = (yB - yA) / 2; midY = (yB + yA) / 2
+          tsX = GAUSS_TABLE[nx].t.slice(); wsX = GAUSS_TABLE[nx].w.slice()
+          tsY = GAUSS_TABLE[ny].t.slice(); wsY = GAUSS_TABLE[ny].w.slice()
+          xs = tsX.map(t => hx * t + midX)
+          ys = tsY.map(t => hy * t + midY)
+          jacobian = hx * hy
+          let sum = 0
+          for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) sum += wsX[i] * wsY[j] * f(xs[i], ys[j])
+          answer = jacobian * sum
+          nScore = window.clampScore(tabScores.gauss2d, nProblems)
+
+          const fStr = polyTermsHTML([p, q], ["x<sup>2</sup>y", "xy<sup>2</sup>"])
+          document.getElementById("p1-gauss2d-display").innerHTML = `
+            <p>Use an n<sub>x</sub>=${nx}, n<sub>y</sub>=${ny} Gauss rule to evaluate:</p>
+            <p class="math-formula">&int;&int;<sub>A</sub> (${fStr}) dA</p>
+            <p>on A = [${formatInput(xA)}, ${formatInput(xB)}] &times; [${formatInput(yA)}, ${formatInput(yB)}].</p>`
+
+          let inputsHtml = ""
+          for (let i = 0; i < nx; i++) {
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss point t<sub>${i + 1}</sub><sup>x</sup> = </span><input type="text" id="p1-gauss2d-quiz-tx${i}" placeholder="${window.sigFigsNote(tsX[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss weight w<sub>${i + 1}</sub><sup>x</sup> = </span><input type="text" id="p1-gauss2d-quiz-wx${i}" placeholder="${window.sigFigsNote(wsX[i], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Physical point x<sub>${i + 1}</sub> = </span><input type="text" id="p1-gauss2d-quiz-x${i}" placeholder="${window.sigFigsNote(xs[i], GAUSS_SIG_FIGS)}"></div>`
+          }
+          for (let j = 0; j < ny; j++) {
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss point t<sub>${j + 1}</sub><sup>y</sup> = </span><input type="text" id="p1-gauss2d-quiz-ty${j}" placeholder="${window.sigFigsNote(tsY[j], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Gauss weight w<sub>${j + 1}</sub><sup>y</sup> = </span><input type="text" id="p1-gauss2d-quiz-wy${j}" placeholder="${window.sigFigsNote(wsY[j], GAUSS_SIG_FIGS)}"></div>`
+            inputsHtml += `<div class="quiz-input-row"><span>Physical point y<sub>${j + 1}</sub> = </span><input type="text" id="p1-gauss2d-quiz-y${j}" placeholder="${window.sigFigsNote(ys[j], GAUSS_SIG_FIGS)}"></div>`
+          }
+          inputsHtml += `<div class="quiz-input-row"><span>Approximate integral I &asymp; </span><input type="text" id="p1-gauss2d-quiz-I" placeholder="${window.sigFigsNote(answer, GAUSS_SIG_FIGS)}"></div>`
+          document.getElementById("p1-gauss2d-quiz-feedback").innerHTML = ""
+          document.getElementById("p1-gauss2d-quiz-hint").classList.add("hidden")
+          document.getElementById("p1-gauss2d-quiz-inputs").innerHTML = inputsHtml
+
+          for (let i = 0; i < nx && state.xVals[i]; i++) {
+            document.getElementById(`p1-gauss2d-quiz-tx${i}`).value = state.xVals[i][0] || ""
+            document.getElementById(`p1-gauss2d-quiz-wx${i}`).value = state.xVals[i][1] || ""
+            document.getElementById(`p1-gauss2d-quiz-x${i}`).value = state.xVals[i][2] || ""
+          }
+          for (let j = 0; j < ny && state.yVals[j]; j++) {
+            document.getElementById(`p1-gauss2d-quiz-ty${j}`).value = state.yVals[j][0] || ""
+            document.getElementById(`p1-gauss2d-quiz-wy${j}`).value = state.yVals[j][1] || ""
+            document.getElementById(`p1-gauss2d-quiz-y${j}`).value = state.yVals[j][2] || ""
+          }
+          document.getElementById("p1-gauss2d-quiz-I").value = state.Ivalue || ""
+          document.getElementById("p1-gauss2d-quizCheckBtn").disabled = false
+          document.getElementById("p1-gauss2d-score-display").textContent = `Score: ${nScore.toFixed(1)}`
+          generateBtn.disabled = (nScore >= nProblems)
         }
 
         p1Gauss2dGenerate()
@@ -1893,6 +2180,11 @@
         Ainv = invertMatrix(A)
         hasDownloaded = !!state.downloaded
         hasChecked = !!state.checked
+        // p2SetTabScores (called before this, on resume) only updates
+        // tabScores.matinv; without this, the internal matinvScore stays
+        // at its default 0 and the next upload would silently recompute
+        // the score from the wrong starting point.
+        matinvScore = tabScores.matinv
         drawMatrix()
         const newBtn = document.getElementById("p2-matinv-newBtn")
         const uploadEl = document.getElementById("p2-matinv-upload")
@@ -1963,6 +2255,95 @@
         })
         updateTotalScore()
       };
+
+      // ── Full-state save / restore (used by "Generate Code") ──
+      // p3GetTabScores/p3SetTabScores only carry the aggregate score for
+      // this tab, which is enough for the score itself to survive a
+      // resume, but not enough for the student to actually see their
+      // work again: every value typed into every one of the 9 steps
+      // would come back blank. p3FrameGetState captures the randomly
+      // generated frame instance (so the same problem — and the same
+      // expected answers — regenerates) plus every step field's current
+      // value, in the exact order stepFieldIds already tracks; p3FrameSetState
+      // reverses that: restore the frame parameters, redraw (which
+      // rebuilds stepFieldIds in that same deterministic order for a
+      // matching M), then zip the saved values back onto the fields.
+      window.p3FrameGetState = function () {
+        if (!params) return null
+        const members = []
+        for (let i = 0; i < M; i++) {
+          const mx = document.getElementById(`p3-frame-in-mx${i}`)
+          const my = document.getElementById(`p3-frame-in-my${i}`)
+          const EA = document.getElementById(`p3-frame-in-EA${i}`)
+          const EI = document.getElementById(`p3-frame-in-EI${i}`)
+          members.push([mx ? mx.value : "", my ? my.value : "", EA ? EA.value : "", EI ? EI.value : ""])
+        }
+        const values = []
+        for (let n = 1; n <= 9; n++) {
+          ;(stepFieldIds[n] || []).forEach(id => {
+            const el = document.getElementById(id)
+            values.push(el ? el.value : "")
+          })
+        }
+        return {
+          M,
+          fx: document.getElementById("p3-frame-in-fx").value,
+          fy: document.getElementById("p3-frame-in-fy").value,
+          Fx: document.getElementById("p3-frame-in-Fx").value,
+          Fy: document.getElementById("p3-frame-in-Fy").value,
+          M0: document.getElementById("p3-frame-in-M").value,
+          members,
+          values,
+        }
+      }
+      window.p3FrameSetState = function (state) {
+        if (!state) return
+        document.getElementById("p3-frame-in-numMembers").value = String(state.M)
+        window.p3FrameRebuildMemberFields()
+        document.getElementById("p3-frame-in-fx").value = state.fx
+        document.getElementById("p3-frame-in-fy").value = state.fy
+        state.members.forEach((m, i) => {
+          const mx = document.getElementById(`p3-frame-in-mx${i}`)
+          const my = document.getElementById(`p3-frame-in-my${i}`)
+          const EA = document.getElementById(`p3-frame-in-EA${i}`)
+          const EI = document.getElementById(`p3-frame-in-EI${i}`)
+          if (mx) mx.value = m[0]
+          if (my) my.value = m[1]
+          if (EA) EA.value = m[2]
+          if (EI) EI.value = m[3]
+        })
+        document.getElementById("p3-frame-in-Fx").value = state.Fx
+        document.getElementById("p3-frame-in-Fy").value = state.Fy
+        document.getElementById("p3-frame-in-M").value = state.M0
+        window.p3FrameDraw() // regenerates params/result and rebuilds all 9 steps
+        let idx = 0
+        for (let n = 1; n <= 9; n++) {
+          ;(stepFieldIds[n] || []).forEach(id => {
+            const el = document.getElementById(id)
+            if (el && state.values[idx] !== undefined) el.value = state.values[idx]
+            idx++
+          })
+        }
+      }
+      // Compact ~-delimited encoding (kept out of JSON to stay short):
+      // M~fx~fy~Fx~Fy~M0~mx0,my0,EA0,EI0;mx1,...~val1,val2,val3,...
+      window.p3EncodeState = function (state) {
+        if (!state) return ""
+        const memberStr = state.members.map(m => m.map(v => String(v).replace(/[~;,]/g, "")).join(",")).join(";")
+        const valuesStr = state.values.map(v => String(v).replace(/[~;,]/g, "")).join(",")
+        return [state.M, state.fx, state.fy, state.Fx, state.Fy, state.M0, memberStr, valuesStr].join("~")
+      }
+      window.p3DecodeState = function (str) {
+        if (!str) return null
+        const parts = str.split("~")
+        if (parts.length !== 8) return null
+        const [Mstr, fx, fy, Fx, Fy, M0, memberStr, valuesStr] = parts
+        const members = memberStr ? memberStr.split(";").map(m => m.split(",")) : []
+        const values = valuesStr ? valuesStr.split(",") : []
+        const M = parseInt(Mstr, 10)
+        if (!isFinite(M)) return null
+        return { M, fx, fy, Fx, Fy, M0, members, values }
+      }
 
       // ── numeric helpers ──
       function fmt(v) {
@@ -2680,24 +3061,24 @@
         html += stepBlockOpen(1, "Member Lengths &amp; Direction Cosines",
           "For each member, compute the length L and the direction cosines c = &Delta;x/L and s = &Delta;y/L, measured from the fixed support to the free joint.")
         res.els.forEach((e, i) => {
-          stepFieldIds[1].push(`p3-frame-s1-L${i}`, `p3-frame-s1-c${i}`, `p3-frame-s1-s${i}`)
-          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Support ${i + 1} &rarr; Free joint):</p>
-            <div class="quiz-input-row"><span>L<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-L${i}" placeholder="${sigFigsNoteHi(e.L)}"></div>
-            <div class="quiz-input-row"><span>c<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-c${i}" placeholder="${sigFigsNoteHi(e.c)}"></div>
-            <div class="quiz-input-row"><span>s<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-s${i}" placeholder="${sigFigsNoteHi(e.s)}"></div>`
+          stepFieldIds[1].push(`p3-frame-s1-L${i + 1}`, `p3-frame-s1-c${i + 1}`, `p3-frame-s1-s${i + 1}`)
+          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Node 1 = Support ${i + 1}, Node 2 = Free joint):</p>
+            <div class="quiz-input-row"><span>L<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-L${i + 1}" placeholder="${sigFigsNoteHi(e.L)}"></div>
+            <div class="quiz-input-row"><span>c<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-c${i + 1}" placeholder="${sigFigsNoteHi(e.c)}"></div>
+            <div class="quiz-input-row"><span>s<sub>${i + 1}</sub> = </span><input type="text" id="p3-frame-s1-s${i + 1}" placeholder="${sigFigsNoteHi(e.s)}"></div>`
         })
         html += stepBlockClose(1)
 
         html += stepBlockOpen(2, "Element Stiffness Matrices",
           "For each member, compute k<sub>a</sub> = EA/L, k<sub>12</sub> = 12EI/L&sup3;, k<sub>6</sub> = 6EI/L&sup2;, k<sub>4</sub> = 4EI/L, and k<sub>2</sub> = 2EI/L, then enter the member's full 6&times;6 " +
-          "local element stiffness matrix. <strong>Degree-of-freedom order:</strong> [u<sub>1</sub>, v<sub>1</sub>, &theta;<sub>1</sub>, u<sub>2</sub>, v<sub>2</sub>, &theta;<sub>2</sub>] &mdash; subscript 1 is the fixed-support end, " +
-          "subscript 2 is the free-joint end, and u, v, &theta; are the member's local axial displacement, transverse displacement, and rotation (the same order labels the rows and columns below). " +
+          "local element stiffness matrix. <strong>Degree-of-freedom order:</strong> [u<sub>1</sub>, v<sub>1</sub>, &theta;<sub>1</sub>, u<sub>2</sub>, v<sub>2</sub>, &theta;<sub>2</sub>] &mdash; subscript 1 is <strong>Node 1</strong> (the fixed-support end), " +
+          "subscript 2 is <strong>Node 2</strong> (the free-joint end), and u, v, &theta; are the member's local axial displacement, transverse displacement, and rotation (the same order labels the rows and columns below). " +
           "<strong>Enter every entry accurate to 6 decimal places.</strong> Each member's matrix is checked separately and is worth 2 points; incorrect entries are highlighted in red " +
           "and you can fix them and check again as many times as you like.", true)
         const dofLabels = ["u<sub>1</sub>", "v<sub>1</sub>", "&theta;<sub>1</sub>", "u<sub>2</sub>", "v<sub>2</sub>", "&theta;<sub>2</sub>"]
         res.els.forEach((e, i) => {
           const mat = localStiffnessMatrix6(e)
-          html += `<p style="margin:14px 0 2px;"><b>Member ${i + 1}</b> local stiffness matrix:</p>
+          html += `<p style="margin:14px 0 2px;"><b>Member ${i + 1}</b> local stiffness matrix (Node 1 = Support ${i + 1}, Node 2 = Free joint):</p>
             <div style="overflow-x:auto;"><table class="quiz-matrix-input"><tbody>
             <tr><td></td>${dofLabels.map(l => `<td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${l}</td>`).join("")}</tr>`
           for (let r = 0; r < 6; r++) {
@@ -2727,14 +3108,14 @@
         html += stepBlockOpen(3, "Global Element Stiffness Matrices",
           "For each member, transform its local stiffness matrix into global coordinates: [K<sub>global</sub>] = [T]<sup>T</sup>[k<sub>local</sub>][T], where [T] rotates each node's (u, v) pair by the member's direction cosines " +
           "(c, s) from Step 1: u = c&middot;U + s&middot;V, v = &minus;s&middot;U + c&middot;V (&theta; is unchanged at either node). " +
-          "<strong>Degree-of-freedom order:</strong> [U<sub>1</sub>, V<sub>1</sub>, &theta;<sub>1</sub>, U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>] &mdash; subscript 1 is the fixed-support end, subscript 2 is the free-joint end, " +
+          "<strong>Degree-of-freedom order:</strong> [U<sub>1</sub>, V<sub>1</sub>, &theta;<sub>1</sub>, U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>] &mdash; subscript 1 is <strong>Node 1</strong> (the fixed-support end), subscript 2 is <strong>Node 2</strong> (the free-joint end), " +
           "and U, V, &theta; are now the member's <em>global</em> X-translation, Y-translation, and rotation (same order labels the rows and columns below). " +
           "<strong>Enter every entry accurate to 6 decimal places.</strong> Each member's matrix is checked separately and is worth 2 points; incorrect entries are highlighted in red " +
           "and you can fix them and check again as many times as you like.", true)
         const globalDofLabels = ["U<sub>1</sub>", "V<sub>1</sub>", "&theta;<sub>1</sub>", "U<sub>2</sub>", "V<sub>2</sub>", "&theta;<sub>2</sub>"]
         res.els.forEach((e, i) => {
           const mat = globalStiffnessMatrix6(e)
-          html += `<p style="margin:14px 0 2px;"><b>Member ${i + 1}</b> global stiffness matrix:</p>
+          html += `<p style="margin:14px 0 2px;"><b>Member ${i + 1}</b> global stiffness matrix (Node 1 = Support ${i + 1}, Node 2 = Free joint):</p>
             <div style="overflow-x:auto;"><table class="quiz-matrix-input"><tbody>
             <tr><td></td>${globalDofLabels.map(l => `<td style="font-weight:bold; font-family:'Times New Roman', Times, serif;">${l}</td>`).join("")}</tr>`
           for (let r = 0; r < 6; r++) {
@@ -2847,18 +3228,18 @@
           "{F} = [K<sub>global</sub>]{d}, where {d} = [U<sub>1</sub>, V<sub>1</sub>, &theta;<sub>1</sub>, U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>] &mdash; the fixed-support node (1) has zero displacement, and the free-joint node (2) has " +
           "(u<sub>x</sub>, u<sub>y</sub>, &theta;) from Step 7. This gives the force/moment components at the support end (F<sub>x1</sub>, F<sub>y1</sub>, M<sub>1</sub>) and at the free-joint end (F<sub>x2</sub>, F<sub>y2</sub>, M<sub>2</sub>), in the global X/Y directions.", true)
         res.els.forEach((e, i) => {
-          stepFieldIds[8].push(`p3-frame-s8-fx1-${i}`, `p3-frame-s8-fy1-${i}`, `p3-frame-s8-m1-${i}`,
-            `p3-frame-s8-fx2-${i}`, `p3-frame-s8-fy2-${i}`, `p3-frame-s8-m2-${i}`)
+          stepFieldIds[8].push(`p3-frame-s8-fx1-${i + 1}`, `p3-frame-s8-fy1-${i + 1}`, `p3-frame-s8-m1-${i + 1}`,
+            `p3-frame-s8-fx2-${i + 1}`, `p3-frame-s8-fy2-${i + 1}`, `p3-frame-s8-m2-${i + 1}`)
           const F = globalMemberForces(e, res)
-          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Support ${i + 1} &rarr; Free joint):</p>
-            <p style="margin:2px 0;">At the support end (node 1):</p>
-            <div class="quiz-input-row"><span>F<sub>x1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fx1-${i}" placeholder="${sigFigsNoteLo(F[0])}"></div>
-            <div class="quiz-input-row"><span>F<sub>y1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fy1-${i}" placeholder="${sigFigsNoteLo(F[1])}"></div>
-            <div class="quiz-input-row"><span>M<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-m1-${i}" placeholder="${sigFigsNoteLo(F[2])}"></div>
-            <p style="margin:6px 0 2px;">At the free-joint end (node 2):</p>
-            <div class="quiz-input-row"><span>F<sub>x2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fx2-${i}" placeholder="${sigFigsNoteLo(F[3])}"></div>
-            <div class="quiz-input-row"><span>F<sub>y2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fy2-${i}" placeholder="${sigFigsNoteLo(F[4])}"></div>
-            <div class="quiz-input-row"><span>M<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-m2-${i}" placeholder="${sigFigsNoteLo(F[5])}"></div>`
+          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Node 1 = Support ${i + 1}, Node 2 = Free joint):</p>
+            <p style="margin:2px 0;">At Node 1 (the support end):</p>
+            <div class="quiz-input-row"><span>F<sub>x1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fx1-${i + 1}" placeholder="${sigFigsNoteLo(F[0])}"></div>
+            <div class="quiz-input-row"><span>F<sub>y1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fy1-${i + 1}" placeholder="${sigFigsNoteLo(F[1])}"></div>
+            <div class="quiz-input-row"><span>M<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-m1-${i + 1}" placeholder="${sigFigsNoteLo(F[2])}"></div>
+            <p style="margin:6px 0 2px;">At Node 2 (the free-joint end):</p>
+            <div class="quiz-input-row"><span>F<sub>x2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fx2-${i + 1}" placeholder="${sigFigsNoteLo(F[3])}"></div>
+            <div class="quiz-input-row"><span>F<sub>y2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-fy2-${i + 1}" placeholder="${sigFigsNoteLo(F[4])}"></div>
+            <div class="quiz-input-row"><span>M<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s8-m2-${i + 1}" placeholder="${sigFigsNoteLo(F[5])}"></div>`
         })
         html += stepBlockClose(8)
 
@@ -2866,18 +3247,18 @@
           "For each member, transform the global end-force vector from Step 8 into <strong>local</strong> (axial/transverse/rotational) coordinates using the member's transformation matrix from Step 3: " +
           "{F<sub>local</sub>} = [T]{F<sub>global</sub>}. This gives the axial force N, transverse (shear) force V, and moment M at the support end (N<sub>1</sub>, V<sub>1</sub>, M<sub>1</sub>) and at the free-joint end (N<sub>2</sub>, V<sub>2</sub>, M<sub>2</sub>).", true)
         res.els.forEach((e, i) => {
-          stepFieldIds[9].push(`p3-frame-s9-n1-${i}`, `p3-frame-s9-v1-${i}`, `p3-frame-s9-m1-${i}`,
-            `p3-frame-s9-n2-${i}`, `p3-frame-s9-v2-${i}`, `p3-frame-s9-m2-${i}`)
+          stepFieldIds[9].push(`p3-frame-s9-n1-${i + 1}`, `p3-frame-s9-v1-${i + 1}`, `p3-frame-s9-m1-${i + 1}`,
+            `p3-frame-s9-n2-${i + 1}`, `p3-frame-s9-v2-${i + 1}`, `p3-frame-s9-m2-${i + 1}`)
           const F = localMemberForces(e, res)
-          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Support ${i + 1} &rarr; Free joint):</p>
-            <p style="margin:2px 0;">At the support end (node 1):</p>
-            <div class="quiz-input-row"><span>N<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-n1-${i}" placeholder="${sigFigsNoteLo(F[0])}"></div>
-            <div class="quiz-input-row"><span>V<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-v1-${i}" placeholder="${sigFigsNoteLo(F[1])}"></div>
-            <div class="quiz-input-row"><span>M<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-m1-${i}" placeholder="${sigFigsNoteLo(F[2])}"></div>
-            <p style="margin:6px 0 2px;">At the free-joint end (node 2):</p>
-            <div class="quiz-input-row"><span>N<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-n2-${i}" placeholder="${sigFigsNoteLo(F[3])}"></div>
-            <div class="quiz-input-row"><span>V<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-v2-${i}" placeholder="${sigFigsNoteLo(F[4])}"></div>
-            <div class="quiz-input-row"><span>M<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-m2-${i}" placeholder="${sigFigsNoteLo(F[5])}"></div>`
+          html += `<p style="margin:6px 0 2px;"><b>Member ${i + 1}</b> (Node 1 = Support ${i + 1}, Node 2 = Free joint):</p>
+            <p style="margin:2px 0;">At Node 1 (the support end):</p>
+            <div class="quiz-input-row"><span>N<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-n1-${i + 1}" placeholder="${sigFigsNoteLo(F[0])}"></div>
+            <div class="quiz-input-row"><span>V<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-v1-${i + 1}" placeholder="${sigFigsNoteLo(F[1])}"></div>
+            <div class="quiz-input-row"><span>M<sub>1,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-m1-${i + 1}" placeholder="${sigFigsNoteLo(F[2])}"></div>
+            <p style="margin:6px 0 2px;">At Node 2 (the free-joint end):</p>
+            <div class="quiz-input-row"><span>N<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-n2-${i + 1}" placeholder="${sigFigsNoteLo(F[3])}"></div>
+            <div class="quiz-input-row"><span>V<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-v2-${i + 1}" placeholder="${sigFigsNoteLo(F[4])}"></div>
+            <div class="quiz-input-row"><span>M<sub>2,${i + 1}</sub> = </span><input type="text" id="p3-frame-s9-m2-${i + 1}" placeholder="${sigFigsNoteLo(F[5])}"></div>`
         })
         html += stepBlockClose(9)
 
@@ -2908,9 +3289,9 @@
       window.p3FrameCheckStep1 = function () {
         const checks = []
         result.els.forEach((e, i) => {
-          checks.push({ id: `p3-frame-s1-L${i}`, expected: e.L })
-          checks.push({ id: `p3-frame-s1-c${i}`, expected: e.c })
-          checks.push({ id: `p3-frame-s1-s${i}`, expected: e.s })
+          checks.push({ id: `p3-frame-s1-L${i + 1}`, expected: e.L })
+          checks.push({ id: `p3-frame-s1-c${i + 1}`, expected: e.c })
+          checks.push({ id: `p3-frame-s1-s${i + 1}`, expected: e.s })
         })
         const hint = "<strong>Hint:</strong> L = &radic;((&Delta;x)&sup2; + (&Delta;y)&sup2;); c = &Delta;x/L, s = &Delta;y/L, measured from the support to the free joint.<br>" +
           result.els.map((e, i) => `Member ${i + 1}: L = ${fmt(e.L)}, c = ${fmt(e.c)}, s = ${fmt(e.s)}.`).join("<br>")
@@ -3254,12 +3635,12 @@
         const checks = []
         result.els.forEach((e, i) => {
           const F = globalMemberForces(e, result)
-          checks.push({ id: `p3-frame-s8-fx1-${i}`, expected: F[0] })
-          checks.push({ id: `p3-frame-s8-fy1-${i}`, expected: F[1] })
-          checks.push({ id: `p3-frame-s8-m1-${i}`, expected: F[2] })
-          checks.push({ id: `p3-frame-s8-fx2-${i}`, expected: F[3] })
-          checks.push({ id: `p3-frame-s8-fy2-${i}`, expected: F[4] })
-          checks.push({ id: `p3-frame-s8-m2-${i}`, expected: F[5] })
+          checks.push({ id: `p3-frame-s8-fx1-${i + 1}`, expected: F[0] })
+          checks.push({ id: `p3-frame-s8-fy1-${i + 1}`, expected: F[1] })
+          checks.push({ id: `p3-frame-s8-m1-${i + 1}`, expected: F[2] })
+          checks.push({ id: `p3-frame-s8-fx2-${i + 1}`, expected: F[3] })
+          checks.push({ id: `p3-frame-s8-fy2-${i + 1}`, expected: F[4] })
+          checks.push({ id: `p3-frame-s8-m2-${i + 1}`, expected: F[5] })
         })
         const hint = "<strong>Hint:</strong> {F} = [K<sub>global</sub>]{d}, with {d} = [0, 0, 0, u<sub>x</sub>, u<sub>y</sub>, &theta;] (the support end doesn't move).<br>" +
           result.els.map((e, i) => {
@@ -3274,12 +3655,12 @@
         const checks = []
         result.els.forEach((e, i) => {
           const F = localMemberForces(e, result)
-          checks.push({ id: `p3-frame-s9-n1-${i}`, expected: F[0] })
-          checks.push({ id: `p3-frame-s9-v1-${i}`, expected: F[1] })
-          checks.push({ id: `p3-frame-s9-m1-${i}`, expected: F[2] })
-          checks.push({ id: `p3-frame-s9-n2-${i}`, expected: F[3] })
-          checks.push({ id: `p3-frame-s9-v2-${i}`, expected: F[4] })
-          checks.push({ id: `p3-frame-s9-m2-${i}`, expected: F[5] })
+          checks.push({ id: `p3-frame-s9-n1-${i + 1}`, expected: F[0] })
+          checks.push({ id: `p3-frame-s9-v1-${i + 1}`, expected: F[1] })
+          checks.push({ id: `p3-frame-s9-m1-${i + 1}`, expected: F[2] })
+          checks.push({ id: `p3-frame-s9-n2-${i + 1}`, expected: F[3] })
+          checks.push({ id: `p3-frame-s9-v2-${i + 1}`, expected: F[4] })
+          checks.push({ id: `p3-frame-s9-m2-${i + 1}`, expected: F[5] })
         })
         const hint = "<strong>Hint:</strong> {F<sub>local</sub>} = [T]{F<sub>global</sub>}, using the member's transformation matrix from Step 3 on the Step 8 global force vector.<br>" +
           result.els.map((e, i) => {
