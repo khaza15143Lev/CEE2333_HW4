@@ -1394,13 +1394,7 @@
             input.classList.remove("correct"); input.classList.add("incorrect")
             quizFeedback.textContent = "Not quite."
             quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
-            const [f0, f1, f2] = nodeF
-            const x = xQuery
-            const [L0, L1, L2] = quadLagrangeBasis(x, nodeX)
-            quizHint.innerHTML = `<strong>Hint:</strong> g(x) = L<sub>0,2</sub>(x)&middot;g(x<sub>0</sub>) + L<sub>1,2</sub>(x)&middot;g(x<sub>1</sub>) + L<sub>2,2</sub>(x)&middot;g(x<sub>2</sub>).<br>
-              L<sub>0,2</sub>(${formatInput(x)}) = ${fmtNum(L0)}, &nbsp; L<sub>1,2</sub>(${formatInput(x)}) = ${fmtNum(L1)}, &nbsp; L<sub>2,2</sub>(${formatInput(x)}) = ${fmtNum(L2)}<br>
-              g(${formatInput(x)}) = (${fmtNum(L0)})(${formatInput(f0)}) + (${fmtNum(L1)})(${formatInput(f1)}) + (${fmtNum(L2)})(${formatInput(f2)}) = ${formatInput(answer)}.<br>
-              Correct answer: ${formatInput(answer)}`
+            quizHint.innerHTML = "<strong>Hint:</strong> g(x) = L<sub>0,2</sub>(x)&middot;g(x<sub>0</sub>) + L<sub>1,2</sub>(x)&middot;g(x<sub>1</sub>) + L<sub>2,2</sub>(x)&middot;g(x<sub>2</sub>), where L<sub>k,2</sub>(x) are the quadratic Lagrange basis functions through the three given nodes."
             quizHint.classList.remove("hidden")
           }
 
@@ -1503,12 +1497,8 @@
             input.classList.remove("correct"); input.classList.add("incorrect")
             quizFeedback.textContent = "Not quite."
             quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
-            const xi = (2 * xQuery - x1v - x2v) / (x2v - x1v)
-            const eta = (2 * yQuery - y1v - y2v) / (y2v - y1v)
-            quizHint.innerHTML = `<strong>Hint:</strong> Convert to normalized coordinates: &xi; = ${fmtNum(xi)}, &eta; = ${fmtNum(eta)}.<br>
-              f(&xi;,&eta;) = f<sub>11</sub>(1&minus;&xi;)(1&minus;&eta;)/4 + f<sub>21</sub>(1+&xi;)(1&minus;&eta;)/4 + f<sub>12</sub>(1&minus;&xi;)(1+&eta;)/4 + f<sub>22</sub>(1+&xi;)(1+&eta;)/4<br>
-              f(${formatInput(xQuery)},${formatInput(yQuery)}) = ${formatInput(answer)}.<br>
-              Correct answer: ${formatInput(answer)}`
+            quizHint.innerHTML = "<strong>Hint:</strong> Convert to normalized coordinates &xi;, &eta; &isin; [&minus;1, 1] first, then use " +
+              "f(&xi;,&eta;) = f<sub>11</sub>(1&minus;&xi;)(1&minus;&eta;)/4 + f<sub>21</sub>(1+&xi;)(1&minus;&eta;)/4 + f<sub>12</sub>(1&minus;&xi;)(1+&eta;)/4 + f<sub>22</sub>(1+&xi;)(1+&eta;)/4."
             quizHint.classList.remove("hidden")
           }
 
@@ -1635,13 +1625,8 @@
           } else {
             quizFeedback.textContent = "Some entries are incorrect."
             quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
-            let hint = `<strong>Hint:</strong> Map &xi; &rarr; x with x = ${fmtNum(halfLength)}&middot;t + ${fmtNum(mid)} (half-length &times; t + midpoint).<br>`
-            for (let i = 0; i < n; i++) {
-              hint += `t<sub>${i + 1}</sub> = ${fmtNum(ts[i])}, w<sub>${i + 1}</sub> = ${fmtNum(ws[i])}, x<sub>${i + 1}</sub> = ${fmtNum(xs[i])}, f(x<sub>${i + 1}</sub>) = ${fmtNum(fs[i])}.<br>`
-            }
-            const sumStr = ws.map((w, i) => `(${fmtNum(w)})(${fmtNum(fs[i])})`).join(" + ")
-            hint += `I &asymp; ${fmtNum(halfLength)}&middot;[${sumStr}] = ${fmtNum(answer)}.<br>Correct answer: ${fmtNum(answer)} (accept within ${GAUSS_SIG_FIGS} sig figs)`
-            quizHint.innerHTML = hint
+            quizHint.innerHTML = "<strong>Hint:</strong> Look up t<sub>i</sub> and w<sub>i</sub> from the n-point Gauss-Legendre table on [&minus;1, 1]. Map to the physical domain with x = (half-length)&middot;t + (midpoint). " +
+              "Then I &asymp; (half-length)&middot;&Sigma; w<sub>i</sub>&middot;f(x<sub>i</sub>). The incorrect fields are highlighted in red above."
             quizHint.classList.remove("hidden")
           }
 
@@ -1808,13 +1793,9 @@
           } else {
             quizFeedback.textContent = "Some entries are incorrect."
             quizFeedback.className = "incorrect"; nScore = Math.max(0, nScore - nAns)
-            let hint = `<strong>Hint:</strong> x = ${fmtNum(hx)}&middot;t<sup>x</sup> + ${fmtNum(midX)}, &nbsp; y = ${fmtNum(hy)}&middot;t<sup>y</sup> + ${fmtNum(midY)}.<br>`
-            for (let i = 0; i < nx; i++) hint += `t<sub>${i + 1}</sub><sup>x</sup> = ${fmtNum(tsX[i])}, w<sub>${i + 1}</sub><sup>x</sup> = ${fmtNum(wsX[i])}, x<sub>${i + 1}</sub> = ${fmtNum(xs[i])}.<br>`
-            for (let j = 0; j < ny; j++) hint += `t<sub>${j + 1}</sub><sup>y</sup> = ${fmtNum(tsY[j])}, w<sub>${j + 1}</sub><sup>y</sup> = ${fmtNum(wsY[j])}, y<sub>${j + 1}</sub> = ${fmtNum(ys[j])}.<br>`
-            hint += `Jacobian = ${fmtNum(hx)}&times;${fmtNum(hy)} = ${fmtNum(jacobian)}.<br>`
-            hint += `I &asymp; J&middot;&sum; w<sub>i</sub><sup>x</sup>w<sub>j</sub><sup>y</sup>f(x<sub>i</sub>,y<sub>j</sub>) = ${fmtNum(answer)}.<br>`
-            hint += `Correct answer: ${fmtNum(answer)} (accept within ${GAUSS_SIG_FIGS} sig figs)`
-            quizHint.innerHTML = hint
+            quizHint.innerHTML = "<strong>Hint:</strong> Look up t<sub>i</sub><sup>x</sup>/w<sub>i</sub><sup>x</sup> and t<sub>j</sub><sup>y</sup>/w<sub>j</sub><sup>y</sup> from the Gauss-Legendre table on [&minus;1, 1], for the given n<sub>x</sub> and n<sub>y</sub>. " +
+              "Map to the physical domain with x = (half-width)&middot;t<sup>x</sup> + (midpoint<sub>x</sub>), y = (half-height)&middot;t<sup>y</sup> + (midpoint<sub>y</sub>). " +
+              "The Jacobian is J = (half-width)&times;(half-height), and I &asymp; J&middot;&Sigma;&Sigma; w<sub>i</sub><sup>x</sup>w<sub>j</sub><sup>y</sup>f(x<sub>i</sub>,y<sub>j</sub>). The incorrect fields are highlighted in red above."
             quizHint.classList.remove("hidden")
           }
 
@@ -2128,8 +2109,7 @@
           } else {
             feedbackEl.textContent = `Not quite \u2014 ${numCorrect} of ${N * N} entries matched.`
             feedbackEl.className = "quiz-feedback incorrect"
-            hintEl.innerHTML = `<strong>Hint:</strong> The correct inverse A<sup>&minus;1</sup> (rounded to 4 decimal places) is:<br>
-              <div style="overflow-x:auto;">${renderMatrix(Ainv.map(row => row.map(fmt4)))}</div>`
+            hintEl.innerHTML = "<strong>Hint:</strong> Recompute A<sup>&minus;1</sup> in Python and double-check for transcription, sign, or rounding errors. The entries that didn't match are not shown here &mdash; re-upload a corrected file to check again."
             hintEl.classList.remove("hidden")
             matinvScore = Math.max(0, matinvScore - MAX_PTS / 2)
           }
@@ -3293,8 +3273,8 @@
           checks.push({ id: `p3-frame-s1-c${i + 1}`, expected: e.c })
           checks.push({ id: `p3-frame-s1-s${i + 1}`, expected: e.s })
         })
-        const hint = "<strong>Hint:</strong> L = &radic;((&Delta;x)&sup2; + (&Delta;y)&sup2;); c = &Delta;x/L, s = &Delta;y/L, measured from the support to the free joint.<br>" +
-          result.els.map((e, i) => `Member ${i + 1}: L = ${fmt(e.L)}, c = ${fmt(e.c)}, s = ${fmt(e.s)}.`).join("<br>")
+        const hint = "<strong>Hint:</strong> L = &radic;((&Delta;x)&sup2; + (&Delta;y)&sup2;); c = &Delta;x/L, s = &Delta;y/L, measured from the support to the free joint. " +
+          "Incorrect entries are highlighted in red &mdash; fix them and check again."
         gradeStep("len", checks, document.getElementById("p3-frame-step1-feedback"), document.getElementById("p3-frame-step1-hint"),
           document.getElementById("p3-frame-step1-score"), hint, document.getElementById("p3-frame-step1-checkBtn"), "p3-frame-step2", 2)
       }
@@ -3330,8 +3310,8 @@
           feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
           feedbackEl.className = "quiz-feedback incorrect"
           hintEl.innerHTML = "<strong>Hint:</strong> DOF order [u<sub>1</sub>, v<sub>1</sub>, &theta;<sub>1</sub>, u<sub>2</sub>, v<sub>2</sub>, &theta;<sub>2</sub>]; " +
-            "k<sub>a</sub> = EA/L, k<sub>12</sub> = 12EI/L&sup3;, k<sub>6</sub> = 6EI/L&sup2;, k<sub>4</sub> = 4EI/L, k<sub>2</sub> = 2EI/L.<br>" +
-            `Correct matrix for Member ${i + 1} (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+            "k<sub>a</sub> = EA/L, k<sub>12</sub> = 12EI/L&sup3;, k<sub>6</sub> = 6EI/L&sup2;, k<sub>4</sub> = 4EI/L, k<sub>2</sub> = 2EI/L. " +
+            "Incorrect entries are highlighted in red &mdash; fix them and check again."
           hintEl.classList.remove("hidden")
           stiffMemberScores[i] = 0
         }
@@ -3372,8 +3352,8 @@
           feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
           feedbackEl.className = "quiz-feedback incorrect"
           hintEl.innerHTML = "<strong>Hint:</strong> DOF order [U<sub>1</sub>, V<sub>1</sub>, &theta;<sub>1</sub>, U<sub>2</sub>, V<sub>2</sub>, &theta;<sub>2</sub>]; " +
-            "[K<sub>global</sub>] = [T]<sup>T</sup>[k<sub>local</sub>][T] using this member's c, s from Step 1 and its local matrix from Step 2.<br>" +
-            `Correct matrix for Member ${i + 1} (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+            "[K<sub>global</sub>] = [T]<sup>T</sup>[k<sub>local</sub>][T] using this member's c, s from Step 1 and its local matrix from Step 2. " +
+            "Incorrect entries are highlighted in red &mdash; fix them and check again."
           hintEl.classList.remove("hidden")
           globalStiffMemberScores[i] = 0
         }
@@ -3420,8 +3400,8 @@
         } else {
           feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
           feedbackEl.className = "quiz-feedback incorrect"
-          hintEl.innerHTML = "<strong>Hint:</strong> Place each member's 6&times;6 global matrix from Step 3 into its support node's and the free joint's rows/columns, adding overlapping contributions.<br>" +
-            `Correct matrix (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+          hintEl.innerHTML = "<strong>Hint:</strong> Place each member's 6&times;6 global matrix from Step 3 into its support node's and the free joint's rows/columns, adding overlapping contributions. " +
+            "Incorrect entries are highlighted in red &mdash; fix them and check again."
           hintEl.classList.remove("hidden")
           stepScores.fullK = 0
         }
@@ -3525,8 +3505,8 @@
         } else {
           feedbackEl.textContent = "Some entries are incorrect (highlighted in red) \u2014 fix them and check again."
           feedbackEl.className = "quiz-feedback incorrect"
-          hintEl.innerHTML = "<strong>Hint:</strong> Sum each member's contribution as given above over all members (DOF order [u<sub>x</sub>, u<sub>y</sub>, &theta;]).<br>" +
-            `Correct matrix (6 decimal places):<br>${renderStiffnessMatrixHtml(mat)}`
+          hintEl.innerHTML = "<strong>Hint:</strong> Sum each member's contribution as given above over all members (DOF order [u<sub>x</sub>, u<sub>y</sub>, &theta;]). " +
+            "Incorrect entries are highlighted in red &mdash; fix them and check again."
           hintEl.classList.remove("hidden")
           stepScores.assemble = 0
         }
@@ -3613,8 +3593,8 @@
           { id: "p3-frame-s6-fy", expected: params.Fy },
           { id: "p3-frame-s6-m0", expected: params.M0 },
         ]
-        const hint = "<strong>Hint:</strong> The reduced load vector is simply the applied load/moment at the free joint (DOF order [u<sub>x</sub>, u<sub>y</sub>, &theta;]).<br>" +
-          `F<sub>x</sub> = ${fmt(params.Fx)}, F<sub>y</sub> = ${fmt(params.Fy)}, M = ${fmt(params.M0)}.`
+        const hint = "<strong>Hint:</strong> The reduced load vector is simply the applied load/moment at the free joint (DOF order [u<sub>x</sub>, u<sub>y</sub>, &theta;]), which was given at the top of this problem. " +
+          "Incorrect entries are highlighted in red &mdash; fix them and check again."
         gradeStep("loadVec", checks, document.getElementById("p3-frame-step6-feedback"), document.getElementById("p3-frame-step6-hint"),
           document.getElementById("p3-frame-step6-score"), hint, document.getElementById("p3-frame-step6-checkBtn"), "p3-frame-step7", 1)
       }
@@ -3625,8 +3605,8 @@
           { id: "p3-frame-s7-uy", expected: result.uy },
           { id: "p3-frame-s7-th", expected: result.th },
         ]
-        const hint = "<strong>Hint:</strong> Solve the 3&times;3 system [K]&middot;[u<sub>x</sub>,u<sub>y</sub>,&theta;] = [F<sub>x</sub>,F<sub>y</sub>,M].<br>" +
-          `u<sub>x</sub> = ${fmt(result.ux)}, u<sub>y</sub> = ${fmt(result.uy)}, &theta; = ${fmt(result.th)}.`
+        const hint = "<strong>Hint:</strong> Solve the 3&times;3 system [K]&middot;[u<sub>x</sub>,u<sub>y</sub>,&theta;] = [F<sub>x</sub>,F<sub>y</sub>,M], using your reduced stiffness matrix (Step 5) and reduced load vector (Step 6). " +
+          "Incorrect entries are highlighted in red &mdash; fix them and check again."
         gradeStep("solve", checks, document.getElementById("p3-frame-step7-feedback"), document.getElementById("p3-frame-step7-hint"),
           document.getElementById("p3-frame-step7-score"), hint, document.getElementById("p3-frame-step7-checkBtn"), "p3-frame-step8", 2, closeEnoughLo)
       }
@@ -3642,11 +3622,8 @@
           checks.push({ id: `p3-frame-s8-fy2-${i + 1}`, expected: F[4] })
           checks.push({ id: `p3-frame-s8-m2-${i + 1}`, expected: F[5] })
         })
-        const hint = "<strong>Hint:</strong> {F} = [K<sub>global</sub>]{d}, with {d} = [0, 0, 0, u<sub>x</sub>, u<sub>y</sub>, &theta;] (the support end doesn't move).<br>" +
-          result.els.map((e, i) => {
-            const F = globalMemberForces(e, result)
-            return `Member ${i + 1}: F<sub>x1</sub> = ${fmt(F[0])}, F<sub>y1</sub> = ${fmt(F[1])}, M<sub>1</sub> = ${fmt(F[2])}, F<sub>x2</sub> = ${fmt(F[3])}, F<sub>y2</sub> = ${fmt(F[4])}, M<sub>2</sub> = ${fmt(F[5])}.`
-          }).join("<br>")
+        const hint = "<strong>Hint:</strong> {F} = [K<sub>global</sub>]{d}, with {d} = [0, 0, 0, u<sub>x</sub>, u<sub>y</sub>, &theta;] (the support end doesn't move), using each member's global stiffness matrix from Step 3. " +
+          "Incorrect entries are highlighted in red &mdash; fix them and check again."
         gradeStep("forces", checks, document.getElementById("p3-frame-step8-feedback"), document.getElementById("p3-frame-step8-hint"),
           document.getElementById("p3-frame-step8-score"), hint, document.getElementById("p3-frame-step8-checkBtn"), "p3-frame-step9", 2, closeEnoughLo)
       }
@@ -3662,11 +3639,8 @@
           checks.push({ id: `p3-frame-s9-v2-${i + 1}`, expected: F[4] })
           checks.push({ id: `p3-frame-s9-m2-${i + 1}`, expected: F[5] })
         })
-        const hint = "<strong>Hint:</strong> {F<sub>local</sub>} = [T]{F<sub>global</sub>}, using the member's transformation matrix from Step 3 on the Step 8 global force vector.<br>" +
-          result.els.map((e, i) => {
-            const F = localMemberForces(e, result)
-            return `Member ${i + 1}: N<sub>1</sub> = ${fmt(F[0])}, V<sub>1</sub> = ${fmt(F[1])}, M<sub>1</sub> = ${fmt(F[2])}, N<sub>2</sub> = ${fmt(F[3])}, V<sub>2</sub> = ${fmt(F[4])}, M<sub>2</sub> = ${fmt(F[5])}.`
-          }).join("<br>")
+        const hint = "<strong>Hint:</strong> {F<sub>local</sub>} = [T]{F<sub>global</sub>}, using the member's transformation matrix from Step 3 on the Step 8 global force vector. " +
+          "Incorrect entries are highlighted in red &mdash; fix them and check again."
         gradeStep("localForces", checks, document.getElementById("p3-frame-step9-feedback"), document.getElementById("p3-frame-step9-hint"),
           document.getElementById("p3-frame-step9-score"), hint, document.getElementById("p3-frame-step9-checkBtn"), null, 2, closeEnoughLo)
       }
